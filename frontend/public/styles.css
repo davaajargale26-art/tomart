@@ -8,6 +8,7 @@
   --brand: #b42335;
   --forest: #163f37;
   --gold: #bd8b2f;
+  --publish: #ffb300;
   --shadow: 0 18px 48px rgba(16, 24, 32, 0.12);
 }
 
@@ -185,7 +186,9 @@ button:disabled {
   grid-template-columns: minmax(150px, 290px) auto;
   min-height: 42px;
   border: 1px solid var(--line);
+  border-radius: 999px;
   background: var(--field);
+  overflow: hidden;
 }
 
 .header-search input {
@@ -537,8 +540,9 @@ button:disabled {
 .form-actions button {
   min-height: 48px;
   border: 0;
+  border-radius: 999px;
   padding: 0 24px;
-  background: var(--gold);
+  background: var(--publish);
   color: var(--ink);
   font-weight: 900;
 }
@@ -662,12 +666,13 @@ button:disabled {
   bottom: 22px;
   display: grid;
   place-items: center;
-  width: 58px;
-  height: 44px;
+  width: 54px;
+  height: 54px;
   border: 0;
+  border-radius: 999px;
   background: var(--ink);
   color: var(--paper);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 900;
   opacity: 0;
   pointer-events: none;
