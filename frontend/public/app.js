@@ -366,6 +366,9 @@ function bindArticleForm() {
     formStatus.textContent = "Хадгалж байна...";
 
     const payload = Object.fromEntries(new FormData(articleForm).entries());
+    if (payload.imageUrl) {
+      payload.imageUrl = payload.imageUrl.trim();
+    }
 
     try {
       const article = await fetchJson("/api/articles", {
