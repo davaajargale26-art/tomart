@@ -64,8 +64,7 @@ let memoryArticles = [];
 let nextMemoryArticleId = 1;
 
 function hasAdminAccess(req) {
-  if (!adminPassword) return true;
-  return req.get("x-admin-password") === adminPassword;
+  return Boolean(adminPassword) && req.get("x-admin-password") === adminPassword;
 }
 
 const seedCategories = [
@@ -408,6 +407,18 @@ app.get("/api/categories", async (_req, res) => {
   } catch {
     res.status(500).json({ message: "Could not load categories." });
   }
+});
+
+app.post("/api/admin/login", (req, res) => {
+  if (!adminPassword) {
+    return res.status(503).json({ message: "Admin password is not configured." });
+  }
+
+  if (String(req.body.password || "") !== adminPassword) {
+    return res.status(401).json({ message: "Wrong admin password." });
+  }
+
+  res.json({ ok: true });
 });
 
 app.get("/api/articles", async (req, res) => {

@@ -150,6 +150,7 @@ button:disabled {
 
 .main-nav button:focus-visible,
 .header-search button:focus-visible,
+.admin-button:focus-visible,
 .submit-button:focus-visible,
 .hero-overlay a:focus-visible,
 .form-actions button:focus-visible,
@@ -196,6 +197,7 @@ button:disabled {
 }
 
 .header-search button,
+.admin-button,
 .submit-button,
 .hero-overlay a,
 .form-actions button,
@@ -235,6 +237,27 @@ button:disabled {
 
 .submit-button:hover {
   background: var(--ink);
+}
+
+.admin-button {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  padding: 0 14px;
+  background: var(--paper);
+  color: var(--forest);
+  font-size: 14px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.admin-button:hover,
+.admin-button.is-active {
+  border-color: var(--forest);
+  background: var(--forest);
+  color: var(--paper);
 }
 
 .hero {
@@ -562,6 +585,10 @@ button:disabled {
 .delete-link:hover {
   background: var(--brand);
   color: var(--paper);
+}
+
+.delete-link.is-hidden {
+  display: none;
 }
 
 .detail-layout {

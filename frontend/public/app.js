@@ -11,14 +11,19 @@ const homeTemplate = document.querySelector("#homeTemplate");
 const categoryNav = document.querySelector("#categoryNav");
 const headerSearchForm = document.querySelector("#headerSearchForm");
 const headerSearchInput = document.querySelector("#headerSearchInput");
+const adminLogin = document.querySelector("#adminLogin");
 const showAddArticle = document.querySelector("#showAddArticle");
 const backTop = document.querySelector("#backTop");
+const adminStorageKey = "tomujinAdminPassword";
 
 let articleGrid;
 let statusText;
 let articleForm;
 let articleCategory;
 let formStatus;
+
+state.adminPassword = window.sessionStorage.getItem(adminStorageKey) || "";
+state.isAdmin = Boolean(state.adminPassword);
 
 function formatDate(value) {
   const date = new Date(value);
@@ -66,6 +71,55 @@ async function fetchJson(url, options) {
 function setStatus(message = "") {
   if (statusText) {
     statusText.textContent = message;
+  }
+}
+
+function updateAdminButton() {
+  adminLogin.classList.toggle("is-active", state.isAdmin);
+  adminLogin.textContent = state.isAdmin ? "Админ ✓" : "Админ";
+  adminLogin.title = state.isAdmin ? "Админ горимоос гарах" : "Админ код оруулах";
+}
+
+async function verifyAdminPassword(password) {
+  await fetchJson("/api/admin/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ password }),
+  });
+}
+
+async function requestAdminLogin() {
+  const password = window.prompt("Админ код оруулна уу");
+  if (!password) return false;
+
+  try {
+    await verifyAdminPassword(password);
+    state.adminPassword = password;
+    state.isAdmin = true;
+    window.sessionStorage.setItem(adminStorageKey, password);
+    updateAdminButton();
+
+    const slug = getArticleSlugFromPath();
+    if (slug && state.view === "article") {
+      await openArticle(slug, { pushUrl: false });
+    }
+
+    return true;
+  } catch (error) {
+    window.alert(error.message || "Админ код буруу байна.");
+    return false;
+  }
+}
+
+function adminLogout() {
+  state.adminPassword = "";
+  state.isAdmin = false;
+  window.sessionStorage.removeItem(adminStorageKey);
+  updateAdminButton();
+
+  const slug = getArticleSlugFromPath();
+  if (slug && state.view === "article") {
+    openArticle(slug, { pushUrl: false });
   }
 }
 
@@ -226,7 +280,7 @@ async function openArticle(slug, { pushUrl = false } = {}) {
       <section class="article-detail">
         <div class="article-actions">
           <button class="back-link" type="button" id="backToNews">Буцах</button>
-          <button class="delete-link" type="button" id="deleteArticle">Устгах</button>
+          <button class="delete-link ${state.isAdmin ? "" : "is-hidden"}" type="button" id="deleteArticle">Устгах</button>
         </div>
         <div class="detail-layout">
           <div class="detail-image">
@@ -264,12 +318,18 @@ async function openArticle(slug, { pushUrl = false } = {}) {
 }
 
 async function deleteArticle(slug, title, adminPassword = "", { askConfirm = true } = {}) {
+  if (!state.isAdmin) {
+    const loggedIn = await requestAdminLogin();
+    if (!loggedIn) return;
+  }
+
   if (askConfirm) {
     const confirmed = window.confirm(`"${title}" нийтлэлийг устгах уу?`);
     if (!confirmed) return;
   }
 
-  const headers = adminPassword ? { "x-admin-password": adminPassword } : {};
+  const password = adminPassword || state.adminPassword;
+  const headers = password ? { "x-admin-password": password } : {};
 
   try {
     await fetchJson(`/api/articles/${slug}`, {
@@ -286,10 +346,8 @@ async function deleteArticle(slug, title, adminPassword = "", { askConfirm = tru
     await loadArticles({ scrollNews: true });
   } catch (error) {
     if (error.message === "Admin password required.") {
-      const password = window.prompt("Устгах админ код оруулна уу");
-      if (password) {
-        await deleteArticle(slug, title, password, { askConfirm: false });
-      }
+      adminLogout();
+      window.alert("Админ код хэрэгтэй эсвэл код буруу байна.");
       return;
     }
 
@@ -338,6 +396,16 @@ headerSearchForm.addEventListener("submit", (event) => {
   loadArticles({ openSingle: true, scrollNews: true });
 });
 
+adminLogin.addEventListener("click", () => {
+  if (state.isAdmin) {
+    const confirmed = window.confirm("Админ горимоос гарах уу?");
+    if (confirmed) adminLogout();
+    return;
+  }
+
+  requestAdminLogin();
+});
+
 showAddArticle.addEventListener("click", (event) => {
   event.preventDefault();
   if (state.view !== "home") mountHome();
@@ -367,6 +435,7 @@ window.addEventListener("popstate", () => {
 });
 
 async function startApp() {
+  updateAdminButton();
   mountHome();
   await loadCategories();
 
