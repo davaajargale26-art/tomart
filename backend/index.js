@@ -21,6 +21,14 @@ function loadEnvFile(filePath) {
     });
 }
 
+function isEnabled(value) {
+  return ["1", "true", "yes", "on"].includes(String(value || "").toLowerCase());
+}
+
+function quoteIdentifier(value) {
+  return `\`${String(value).replace(/`/g, "``")}\``;
+}
+
 loadEnvFile(path.join(__dirname, ".env"));
 
 const app = express();
@@ -30,14 +38,23 @@ const publicPath = path.join(__dirname, "..", "frontend", "public");
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 
-const db = mysql.createPool({
+const dbName = process.env.DB_NAME || "loginapp";
+const dbBaseConfig = {
   host: process.env.DB_HOST || "localhost",
   port: Number(process.env.DB_PORT) || 3306,
   user: process.env.DB_USER || "root",
   password: process.env.DB_PASSWORD || "",
-  database: process.env.DB_NAME || "loginapp",
   waitForConnections: true,
   connectionLimit: 10,
+};
+
+if (isEnabled(process.env.DB_SSL || process.env.TIDB_ENABLE_SSL)) {
+  dbBaseConfig.ssl = { minVersion: "TLSv1.2" };
+}
+
+const db = mysql.createPool({
+  ...dbBaseConfig,
+  database: dbName,
 });
 
 let usingMemoryStore = false;
@@ -59,9 +76,9 @@ const seedArticles = [
     slug: "tomujin-first-note",
     category: "updates",
     title: "Tomujin Article нээгдлээ",
-    excerpt: "Хүмүүсийн бичсэн нийтлэл, бодол, тэмдэглэлийг тайван унших булан.",
+    excerpt: "Сурагчдын бичсэн нийтлэл, бодол, тэмдэглэлийг нэг дор цэгцтэй унших шинэ булан.",
     body:
-      "Tomujin Article бол хүмүүсийн бичсэн нийтлэл, тэмдэглэл, бодлыг цэгцтэй харуулах зориулалттай сайт. Энэ эхний хувилбар нь хайлт, ангилал, дэлгэрэнгүй унших хуудас, нийтлэл нэмэх хэсэгтэй.",
+      "Tomujin Article бол сурагчдын бичсэн нийтлэл, тэмдэглэл, бодлыг цэгцтэй харуулах зориулалттай нийтлэлийн талбар юм.\n\nЭхний хувилбар нь хайлт, ангилал, дэлгэрэнгүй унших хуудас, нийтлэл нэмэх хэсэгтэй. Дараагийн шатанд онлайн өгөгдлийн сан холбогдсоноор нийтлэлүүд байнга хадгалагдана.",
     author: "Tomujin Editorial",
     imageUrl: "/images/stagknight.jpg",
     featured: true,
@@ -70,9 +87,9 @@ const seedArticles = [
     slug: "quiet-voices",
     category: "culture",
     title: "Тайван хоолойнуудын булан",
-    excerpt: "Уншигчдад зориулсан төвлөрсөн нийтлэлийн орчин.",
+    excerpt: "Уншигчдад зориулсан төвлөрсөн, тайван нийтлэлийн орчин.",
     body:
-      "Энэ сайт худалдан авалтгүй, бүртгэлгүй. Зөвхөн хүмүүст нийтлэл харуулахад төвлөрнө. Нүүр хэсэг, ангилал, хайлт, нийтлэлийн дэлгэрэнгүй хуудас бүгд нэг backend-ээр ажиллана.",
+      "Энэ сайт худалдан авалтгүй, бүртгэлгүй. Зөвхөн нийтлэл унших, нийтлэх урсгалд төвлөрнө.\n\nНүүр хэсэг, ангилал, хайлт, нийтлэлийн дэлгэрэнгүй хуудас бүгд нэг backend-ээр ажиллаж байгаа тул дараа нь өгөгдлийн санг солиход үндсэн хэрэглээ хэвээр үлдэнэ.",
     author: "Tomujin Editorial",
     imageUrl: "/images/stagknight.jpg",
     featured: true,
@@ -83,7 +100,7 @@ const seedArticles = [
     title: "Нийтлэлийг хурдан олох нь",
     excerpt: "Хайлт болон ангиллаар хэрэгтэй нийтлэлээ хурдан олох боломжтой.",
     body:
-      "Дээд хэсгийн хайлт дээр түлхүүр үг бичээд Enter дарахад тохирох нийтлэлүүд гарна. Хэрэв ганцхан нийтлэл олдвол шууд унших хуудас руу орно. Нийтлэлийн карт дээр дарахад дэлгэрэнгүй хуудас нээгдэнэ.",
+      "Дээд хэсгийн хайлт дээр түлхүүр үг бичээд Enter дарахад тохирох нийтлэлүүд гарна. Хэрэв ганцхан нийтлэл олдвол шууд унших хуудас руу орно.\n\nНийтлэлийн карт дээр дарахад дэлгэрэнгүй хуудас нээгдэнэ. Ингэснээр нүүр хуудас хурдан уншигдаж, нийтлэл бүр тусдаа төвлөрсөн хэлбэртэй харагдана.",
     author: "Guide Desk",
     imageUrl: "/images/stagknight.jpg",
     featured: false,
@@ -94,7 +111,7 @@ const seedArticles = [
     title: "Долоо хоногийн тэмдэглэл",
     excerpt: "Богино бодол, ажиглалт, сонирхолтой санаанууд нэг дор.",
     body:
-      "Мэдээний сайт дээр соёл, зарлал, зөвлөгөө, хувийн тэмдэглэл зэрэг төрлийн нийтлэлүүдийг тусад нь ангилж хадгална. Дараа нь админ хэсэг нэмэхэд энэ бүтэц бэлэн байна.",
+      "Мэдээний сайт дээр соёл, зарлал, зөвлөгөө, хувийн тэмдэглэл зэрэг төрлийн нийтлэлүүдийг тусад нь ангилж хадгална.\n\nЭнэ бүтэц нь жижиг сургуулийн нийтлэлийн талбар, клубийн мэдээллийн булан, эсвэл хувийн editorial сайт болж өргөжихөд бэлэн.",
     author: "Article Desk",
     imageUrl: "/images/stagknight.jpg",
     featured: false,
@@ -184,27 +201,35 @@ function getMemoryArticle(slug) {
   return article ? mapMemoryArticle(article) : null;
 }
 
-function createMemoryArticle(payload) {
-  const title = String(payload.title || "").trim();
-  const excerpt = String(payload.excerpt || "").trim();
-  const body = String(payload.body || "").trim();
-  const author = String(payload.author || "").trim();
-  const categorySlug = String(payload.categorySlug || "").trim();
-  const imageUrl = String(payload.imageUrl || "").trim() || "/images/stagknight.jpg";
+function validateArticlePayload(payload) {
+  const article = {
+    title: String(payload.title || "").trim(),
+    excerpt: String(payload.excerpt || "").trim(),
+    body: String(payload.body || "").trim(),
+    author: String(payload.author || "").trim(),
+    categorySlug: String(payload.categorySlug || "").trim(),
+    imageUrl: String(payload.imageUrl || "").trim() || "/images/stagknight.jpg",
+  };
 
-  if (!title || !excerpt || !body || !author || !categorySlug) {
+  if (!article.title || !article.excerpt || !article.body || !article.author || !article.categorySlug) {
     const error = new Error("Please fill every required field.");
     error.statusCode = 400;
     throw error;
   }
 
-  if (!visibleCategorySlugs.includes(categorySlug)) {
+  if (!visibleCategorySlugs.includes(article.categorySlug)) {
     const error = new Error("Unknown category.");
     error.statusCode = 400;
     throw error;
   }
 
-  const category = memoryCategories.find((item) => item.slug === categorySlug);
+  return article;
+}
+
+function createMemoryArticle(payload) {
+  const payloadArticle = validateArticlePayload(payload);
+  const category = memoryCategories.find((item) => item.slug === payloadArticle.categorySlug);
+
   if (!category) {
     const error = new Error("Category not found.");
     error.statusCode = 400;
@@ -213,13 +238,13 @@ function createMemoryArticle(payload) {
 
   const article = {
     id: nextMemoryArticleId,
-    slug: makeSlug(title),
+    slug: makeSlug(payloadArticle.title),
     category_id: category.id,
-    title,
-    excerpt,
-    body,
-    author,
-    image_url: imageUrl,
+    title: payloadArticle.title,
+    excerpt: payloadArticle.excerpt,
+    body: payloadArticle.body,
+    author: payloadArticle.author,
+    image_url: payloadArticle.imageUrl,
     featured: 0,
     published_at: new Date().toISOString(),
   };
@@ -233,7 +258,15 @@ function categoryPlaceholders() {
   return visibleCategorySlugs.map(() => "?").join(", ");
 }
 
+async function ensureDatabase() {
+  const adminDb = mysql.createPool(dbBaseConfig);
+  await adminDb.query(`CREATE DATABASE IF NOT EXISTS ${quoteIdentifier(dbName)} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
+  await adminDb.end();
+}
+
 async function initializeNews() {
+  await ensureDatabase();
+
   await db.query(`
     CREATE TABLE IF NOT EXISTS news_categories (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -333,7 +366,7 @@ app.get("/api/health", async (_req, res) => {
 
   try {
     await db.query("SELECT 1");
-    res.json({ ok: true, database: true, name: "tomujin-article-api" });
+    res.json({ ok: true, database: true, storage: "mysql", name: "tomujin-article-api" });
   } catch (error) {
     res.status(500).json({ ok: false, database: false, message: error.message });
   }
@@ -476,27 +509,14 @@ app.post("/api/articles", async (req, res) => {
   }
 
   try {
-    const title = String(req.body.title || "").trim();
-    const excerpt = String(req.body.excerpt || "").trim();
-    const body = String(req.body.body || "").trim();
-    const author = String(req.body.author || "").trim();
-    const categorySlug = String(req.body.categorySlug || "").trim();
-    const imageUrl = String(req.body.imageUrl || "").trim() || "/images/stagknight.jpg";
+    const article = validateArticlePayload(req.body);
+    const [categoryRows] = await db.query("SELECT id FROM news_categories WHERE slug = ? LIMIT 1", [article.categorySlug]);
 
-    if (!title || !excerpt || !body || !author || !categorySlug) {
-      return res.status(400).json({ message: "Please fill every required field." });
-    }
-
-    if (!visibleCategorySlugs.includes(categorySlug)) {
-      return res.status(400).json({ message: "Unknown category." });
-    }
-
-    const [categoryRows] = await db.query("SELECT id FROM news_categories WHERE slug = ? LIMIT 1", [categorySlug]);
     if (categoryRows.length === 0) {
       return res.status(400).json({ message: "Category not found." });
     }
 
-    const slug = makeSlug(title);
+    const slug = makeSlug(article.title);
 
     await db.query(
       `
@@ -504,7 +524,15 @@ app.post("/api/articles", async (req, res) => {
         (slug, category_id, title, excerpt, body, author, image_url, featured)
       VALUES (?, ?, ?, ?, ?, ?, ?, 0)
       `,
-      [slug, categoryRows[0].id, title, excerpt, body, author, imageUrl]
+      [
+        slug,
+        categoryRows[0].id,
+        article.title,
+        article.excerpt,
+        article.body,
+        article.author,
+        article.imageUrl,
+      ]
     );
 
     const [rows] = await db.query(
@@ -532,7 +560,7 @@ app.post("/api/articles", async (req, res) => {
 
     res.status(201).json(mapArticle(rows[0]));
   } catch (error) {
-    res.status(500).json({ message: "Could not save article.", error: error.message });
+    res.status(error.statusCode || 500).json({ message: error.message || "Could not save article." });
   }
 });
 

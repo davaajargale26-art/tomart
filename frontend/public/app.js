@@ -12,6 +12,7 @@ const categoryNav = document.querySelector("#categoryNav");
 const headerSearchForm = document.querySelector("#headerSearchForm");
 const headerSearchInput = document.querySelector("#headerSearchInput");
 const showAddArticle = document.querySelector("#showAddArticle");
+const backTop = document.querySelector("#backTop");
 
 let articleGrid;
 let statusText;
@@ -20,11 +21,17 @@ let articleCategory;
 let formStatus;
 
 function formatDate(value) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
   return new Intl.DateTimeFormat("mn-MN", {
     year: "numeric",
     month: "long",
     day: "numeric",
-  }).format(new Date(value));
+  }).format(date);
 }
 
 function escapeHtml(value = "") {
@@ -36,11 +43,30 @@ function escapeHtml(value = "") {
     .replaceAll("'", "&#039;");
 }
 
+function renderParagraphs(value = "") {
+  return String(value)
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean)
+    .map((paragraph) => `<p>${escapeHtml(paragraph).replaceAll("\n", "<br />")}</p>`)
+    .join("");
+}
+
 async function fetchJson(url, options) {
   const response = await fetch(url, options);
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.message || "Request failed");
+
+  if (!response.ok) {
+    throw new Error(data.message || "Request failed");
+  }
+
   return data;
+}
+
+function setStatus(message = "") {
+  if (statusText) {
+    statusText.textContent = message;
+  }
 }
 
 function mountHome() {
@@ -61,12 +87,16 @@ function mountHome() {
 function renderCategories() {
   const buttons = [
     `<button class="${state.activeCategory === "all" ? "is-active" : ""}" data-category="all">Бүгд</button>`,
-    ...state.categories.map(
-      (category) =>
-        `<button class="${state.activeCategory === category.slug ? "is-active" : ""}" data-category="${category.slug}">
+    ...state.categories.map((category) => {
+      const count = Number(category.articleCount || 0);
+
+      return `
+        <button class="${state.activeCategory === category.slug ? "is-active" : ""}" data-category="${category.slug}">
           ${escapeHtml(category.name)}
-        </button>`
-    ),
+          <small>${count}</small>
+        </button>
+      `;
+    }),
   ];
 
   categoryNav.innerHTML = buttons.join("");
@@ -103,11 +133,11 @@ async function loadArticles({ openSingle = false, scrollNews = false } = {}) {
   if (state.activeCategory !== "all") params.set("category", state.activeCategory);
   if (state.query) params.set("q", state.query);
 
-  statusText.textContent = "Loading articles...";
+  setStatus("Нийтлэлүүдийг ачаалж байна...");
 
   try {
     state.articles = await fetchJson(`/api/articles?${params.toString()}`);
-    statusText.textContent = state.articles.length ? "" : "No articles found.";
+    setStatus(state.articles.length ? "" : "Нийтлэл олдсонгүй.");
 
     if (openSingle && state.articles.length === 1) {
       openArticle(state.articles[0].slug);
@@ -120,63 +150,90 @@ async function loadArticles({ openSingle = false, scrollNews = false } = {}) {
       document.querySelector("#news").scrollIntoView({ behavior: "smooth", block: "start" });
     }
   } catch (error) {
-    statusText.textContent = error.message || "Could not load articles. Check backend and MySQL.";
+    setStatus(error.message || "Нийтлэлүүдийг ачаалж чадсангүй.");
+    renderArticles();
   }
 }
 
 function renderArticles() {
   if (!articleGrid) return;
 
+  if (!state.articles.length) {
+    articleGrid.innerHTML = "";
+    return;
+  }
+
   articleGrid.innerHTML = state.articles
     .map(
       (article) => `
-        <article class="post-card" tabindex="0" data-slug="${article.slug}">
-          <img src="${article.imageUrl || "/images/stagknight.jpg"}" alt="${escapeHtml(article.title)}" />
-          <div class="post-overlay">
-            <span>${escapeHtml(article.category.name)} / ${escapeHtml(article.author)}</span>
+        <article class="post-card" tabindex="0" data-slug="${escapeHtml(article.slug)}">
+          <img src="${escapeHtml(article.imageUrl || "/images/stagknight.jpg")}" alt="${escapeHtml(article.title)}" />
+          <div class="post-copy">
+            <div class="post-meta">
+              <span>${escapeHtml(article.category.name)}</span>
+              <span>${escapeHtml(formatDate(article.publishedAt))}</span>
+            </div>
             <h3>${escapeHtml(article.title)}</h3>
-            <small>${formatDate(article.publishedAt)}</small>
+            <p>${escapeHtml(article.excerpt)}</p>
+            <small>${escapeHtml(article.author)}</small>
           </div>
         </article>
       `
     )
     .join("");
 
+  articleGrid.querySelectorAll("img").forEach((image) => {
+    image.addEventListener("error", () => {
+      image.src = "/images/stagknight.jpg";
+    });
+  });
+
   articleGrid.querySelectorAll("[data-slug]").forEach((card) => {
     card.addEventListener("click", () => openArticle(card.dataset.slug));
     card.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") openArticle(card.dataset.slug);
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openArticle(card.dataset.slug);
+      }
     });
   });
 }
 
 async function openArticle(slug) {
-  const article = await fetchJson(`/api/articles/${slug}`);
-  state.view = "article";
+  try {
+    const article = await fetchJson(`/api/articles/${slug}`);
+    state.view = "article";
 
-  app.innerHTML = `
-    <section class="article-detail">
-      <button class="back-link" type="button" id="backToNews">← Back</button>
-      <div class="detail-layout">
-        <div class="detail-image">
-          <img src="${article.imageUrl || "/images/stagknight.jpg"}" alt="${escapeHtml(article.title)}" />
+    app.innerHTML = `
+      <section class="article-detail">
+        <button class="back-link" type="button" id="backToNews">Буцах</button>
+        <div class="detail-layout">
+          <div class="detail-image">
+            <img src="${escapeHtml(article.imageUrl || "/images/stagknight.jpg")}" alt="${escapeHtml(article.title)}" />
+          </div>
+          <article class="detail-copy">
+            <span>${escapeHtml(article.category.name)} / ${escapeHtml(article.author)} / ${escapeHtml(formatDate(article.publishedAt))}</span>
+            <h1>${escapeHtml(article.title)}</h1>
+            <p class="excerpt">${escapeHtml(article.excerpt)}</p>
+            ${renderParagraphs(article.body)}
+          </article>
         </div>
-        <article class="detail-copy">
-          <span>${escapeHtml(article.category.name)} · ${escapeHtml(article.author)} · ${formatDate(article.publishedAt)}</span>
-          <h1>${escapeHtml(article.title)}</h1>
-          <p class="excerpt">${escapeHtml(article.excerpt)}</p>
-          <p>${escapeHtml(article.body)}</p>
-        </article>
-      </div>
-    </section>
-  `;
+      </section>
+    `;
 
-  document.querySelector("#backToNews").addEventListener("click", () => {
-    mountHome();
-    loadArticles({ scrollNews: true });
-  });
+    document.querySelector(".detail-image img").addEventListener("error", (event) => {
+      event.currentTarget.src = "/images/stagknight.jpg";
+    });
 
-  window.scrollTo({ top: 0, behavior: "smooth" });
+    document.querySelector("#backToNews").addEventListener("click", () => {
+      mountHome();
+      loadArticles({ scrollNews: true });
+    });
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  } catch (error) {
+    setStatus(error.message || "Нийтлэл нээж чадсангүй.");
+  }
 }
 
 function bindArticleForm() {
@@ -184,7 +241,10 @@ function bindArticleForm() {
 
   articleForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    formStatus.textContent = "Saving...";
+
+    const submitButton = articleForm.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    formStatus.textContent = "Хадгалж байна...";
 
     const payload = Object.fromEntries(new FormData(articleForm).entries());
 
@@ -196,15 +256,17 @@ function bindArticleForm() {
       });
 
       articleForm.reset();
-      formStatus.textContent = "Saved.";
+      formStatus.textContent = "Нийтлэгдлээ.";
       state.activeCategory = "all";
       state.query = "";
       headerSearchInput.value = "";
-      renderCategories();
+      await loadCategories();
       await loadArticles();
       openArticle(article.slug);
     } catch (error) {
-      formStatus.textContent = error.message || "Could not save article.";
+      formStatus.textContent = error.message || "Нийтлэлийг хадгалж чадсангүй.";
+    } finally {
+      submitButton.disabled = false;
     }
   });
 }
@@ -222,9 +284,11 @@ showAddArticle.addEventListener("click", (event) => {
   window.setTimeout(() => document.querySelector('[name="title"]').focus(), 350);
 });
 
-document.querySelector("#backTop").addEventListener("click", () => {
+backTop.addEventListener("click", () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
 mountHome();
-Promise.all([loadCategories(), loadArticles()]);
+Promise.all([loadCategories(), loadArticles()]).catch((error) => {
+  setStatus(error.message || "Сайтыг ачаалж чадсангүй.");
+});

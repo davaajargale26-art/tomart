@@ -11,7 +11,7 @@
   <body>
     <header class="site-header">
       <div class="header-inner">
-        <a class="brand" href="/">
+        <a class="brand" href="/" aria-label="Tomujin Article home">
           <span class="brand-mark">T</span>
           <span class="brand-word">
             <strong>TOMUJIN</strong>
@@ -23,10 +23,10 @@
 
         <div class="header-actions">
           <form class="header-search" id="headerSearchForm">
-            <input id="headerSearchInput" type="search" placeholder="Search articles" />
-            <button type="submit" aria-label="Search">⌕</button>
+            <input id="headerSearchInput" type="search" placeholder="Нийтлэл хайх" />
+            <button type="submit" aria-label="Хайх">Search</button>
           </form>
-          <a class="submit-button" id="showAddArticle" href="#addArticle">Add Article</a>
+          <a class="submit-button" id="showAddArticle" href="#addArticle">Нийтлэл нэмэх</a>
         </div>
       </div>
     </header>
@@ -37,68 +37,70 @@
       <section class="hero">
         <img class="hero-image" src="/images/stagknight.jpg" alt="" />
         <div class="hero-overlay">
-          <span class="eyebrow">Tomujin / Featured</span>
-          <h1>Articles, thoughts, and quiet notes in one calm place.</h1>
-          <p>Read people’s writing, search by title, choose a group, and open each post as a full article.</p>
-          <a href="#news">Read Articles</a>
+          <span class="eyebrow">Tomujin / Editorial</span>
+          <h1>TOMUJIN ARTICLE</h1>
+          <p>Сурагчдын бичсэн нийтлэл, бодол, тэмдэглэлийг нэг дор цэгцтэй унших орчин.</p>
+          <a href="#news">Нийтлэлүүд</a>
         </div>
       </section>
 
       <section class="section" id="news">
         <div class="section-heading">
-          <h2>Latest Articles</h2>
-          <p>Click any post to open the full reading page.</p>
+          <span>Latest</span>
+          <h2>Сүүлийн нийтлэлүүд</h2>
         </div>
 
         <p class="status" id="status"></p>
         <div class="post-grid" id="articleGrid"></div>
       </section>
 
-      <section class="section add-section" id="addArticle">
-        <div class="section-heading">
-          <h2>Add New Article</h2>
-          <p>Write a new post here and it will be saved into MySQL.</p>
-        </div>
-
-        <form class="article-form" id="articleForm">
-          <label>
-            Title
-            <input name="title" type="text" placeholder="Article title" required />
-          </label>
-          <label>
-            Author
-            <input name="author" type="text" placeholder="Writer name" required />
-          </label>
-          <label>
-            Category
-            <select name="categorySlug" id="articleCategory" required></select>
-          </label>
-          <label>
-            Image URL
-            <input name="imageUrl" type="url" placeholder="/images/stagknight.jpg" />
-          </label>
-          <label class="wide">
-            Short description
-            <textarea name="excerpt" rows="3" placeholder="Small summary" required></textarea>
-          </label>
-          <label class="wide">
-            Full article
-            <textarea name="body" rows="9" placeholder="Write the article here" required></textarea>
-          </label>
-          <div class="form-actions">
-            <p id="formStatus"></p>
-            <button type="submit">Publish Article</button>
+      <section class="publish-band" id="addArticle">
+        <div class="publish-inner">
+          <div class="section-heading align-left">
+            <span>Publish</span>
+            <h2>Шинэ нийтлэл</h2>
           </div>
-        </form>
+
+          <form class="article-form" id="articleForm">
+            <label>
+              Гарчиг
+              <input name="title" type="text" placeholder="Нийтлэлийн гарчиг" required />
+            </label>
+            <label>
+              Зохиогч
+              <input name="author" type="text" placeholder="Нэр" required />
+            </label>
+            <label>
+              Ангилал
+              <select name="categorySlug" id="articleCategory" required></select>
+            </label>
+            <label>
+              Зургийн холбоос
+              <input name="imageUrl" type="url" placeholder="/images/stagknight.jpg" />
+            </label>
+            <label class="wide">
+              Товч
+              <textarea name="excerpt" rows="3" placeholder="Нийтлэлийн богино тайлбар" required></textarea>
+            </label>
+            <label class="wide">
+              Нийтлэл
+              <textarea name="body" rows="9" placeholder="Энд бичнэ үү" required></textarea>
+            </label>
+            <div class="form-actions">
+              <p id="formStatus"></p>
+              <button type="submit">Нийтлэх</button>
+            </div>
+          </form>
+        </div>
       </section>
     </template>
 
     <footer class="site-footer">
       <div class="footer-inner">
         <strong>TOMUJIN ARTICLE</strong>
-        <span>© 2026 · Article-only learning project</span>
+        <span>2026 / Article-only learning project</span>
       </div>
-      <button type="button" id="backTop">↑</button>
+      <button type="button" id="backTop">Top</button>
     </footer>
   </body>
 </html>
