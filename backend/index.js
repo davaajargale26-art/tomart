@@ -32,12 +32,18 @@ app.use(express.json({ limit: "1mb" }));
 
 const db = mysql.createPool({
   host: process.env.DB_HOST || "localhost",
+  port: Number(process.env.DB_PORT) || 3306,
   user: process.env.DB_USER || "root",
   password: process.env.DB_PASSWORD || "",
-  database: process.env.DB_NAME || "login_app",
+  database: process.env.DB_NAME || "loginapp",
   waitForConnections: true,
   connectionLimit: 10,
 });
+
+let usingMemoryStore = false;
+let memoryCategories = [];
+let memoryArticles = [];
+let nextMemoryArticleId = 1;
 
 const seedCategories = [
   ["guides", "Зөвлөгөө"],
@@ -94,6 +100,134 @@ const seedArticles = [
     featured: false,
   },
 ];
+
+function initializeMemoryStore() {
+  memoryCategories = seedCategories.map(([slug, name], index) => ({
+    id: index + 1,
+    slug,
+    name,
+  }));
+
+  const categoryIds = Object.fromEntries(memoryCategories.map((category) => [category.slug, category.id]));
+
+  memoryArticles = seedArticles.map((article, index) => ({
+    id: index + 1,
+    slug: article.slug,
+    category_id: categoryIds[article.category],
+    title: article.title,
+    excerpt: article.excerpt,
+    body: article.body,
+    author: article.author,
+    image_url: article.imageUrl,
+    featured: article.featured ? 1 : 0,
+    published_at: new Date(Date.now() - index * 60 * 60 * 1000).toISOString(),
+  }));
+
+  nextMemoryArticleId = memoryArticles.length + 1;
+}
+
+function mapMemoryArticle(article) {
+  const category = memoryCategories.find((item) => item.id === article.category_id);
+
+  return {
+    id: article.id,
+    slug: article.slug,
+    title: article.title,
+    excerpt: article.excerpt,
+    body: article.body,
+    author: article.author,
+    imageUrl: article.image_url,
+    featured: Boolean(article.featured),
+    publishedAt: article.published_at,
+    category: {
+      id: category.id,
+      slug: category.slug,
+      name: category.name,
+    },
+  };
+}
+
+function getMemoryCategories() {
+  return memoryCategories
+    .filter((category) => visibleCategorySlugs.includes(category.slug))
+    .map((category) => ({
+      id: category.id,
+      slug: category.slug,
+      name: category.name,
+      articleCount: memoryArticles.filter((article) => article.category_id === category.id).length,
+    }));
+}
+
+function getMemoryArticles({ q = "", category = "" } = {}) {
+  const search = String(q).trim().toLowerCase();
+
+  return memoryArticles
+    .filter((article) => {
+      const categoryInfo = memoryCategories.find((item) => item.id === article.category_id);
+      if (!categoryInfo || !visibleCategorySlugs.includes(categoryInfo.slug)) return false;
+      if (category && category !== "all" && categoryInfo.slug !== category) return false;
+      if (!search) return true;
+
+      return [article.title, article.excerpt, article.body, article.author].some((value) =>
+        String(value).toLowerCase().includes(search)
+      );
+    })
+    .sort((left, right) => {
+      if (right.featured !== left.featured) return right.featured - left.featured;
+      return new Date(right.published_at) - new Date(left.published_at) || right.id - left.id;
+    })
+    .map(mapMemoryArticle);
+}
+
+function getMemoryArticle(slug) {
+  const article = memoryArticles.find((item) => item.slug === slug);
+  return article ? mapMemoryArticle(article) : null;
+}
+
+function createMemoryArticle(payload) {
+  const title = String(payload.title || "").trim();
+  const excerpt = String(payload.excerpt || "").trim();
+  const body = String(payload.body || "").trim();
+  const author = String(payload.author || "").trim();
+  const categorySlug = String(payload.categorySlug || "").trim();
+  const imageUrl = String(payload.imageUrl || "").trim() || "/images/stagknight.jpg";
+
+  if (!title || !excerpt || !body || !author || !categorySlug) {
+    const error = new Error("Please fill every required field.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (!visibleCategorySlugs.includes(categorySlug)) {
+    const error = new Error("Unknown category.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const category = memoryCategories.find((item) => item.slug === categorySlug);
+  if (!category) {
+    const error = new Error("Category not found.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const article = {
+    id: nextMemoryArticleId,
+    slug: makeSlug(title),
+    category_id: category.id,
+    title,
+    excerpt,
+    body,
+    author,
+    image_url: imageUrl,
+    featured: 0,
+    published_at: new Date().toISOString(),
+  };
+
+  nextMemoryArticleId += 1;
+  memoryArticles.unshift(article);
+  return mapMemoryArticle(article);
+}
 
 function categoryPlaceholders() {
   return visibleCategorySlugs.map(() => "?").join(", ");
@@ -192,6 +326,11 @@ function makeSlug(title) {
 }
 
 app.get("/api/health", async (_req, res) => {
+  if (usingMemoryStore) {
+    res.json({ ok: true, database: false, storage: "memory", name: "tomujin-article-api" });
+    return;
+  }
+
   try {
     await db.query("SELECT 1");
     res.json({ ok: true, database: true, name: "tomujin-article-api" });
@@ -201,6 +340,11 @@ app.get("/api/health", async (_req, res) => {
 });
 
 app.get("/api/categories", async (_req, res) => {
+  if (usingMemoryStore) {
+    res.json(getMemoryCategories());
+    return;
+  }
+
   try {
     const placeholders = categoryPlaceholders();
     const [rows] = await db.query(
@@ -222,6 +366,12 @@ app.get("/api/categories", async (_req, res) => {
 });
 
 app.get("/api/articles", async (req, res) => {
+  if (usingMemoryStore) {
+    const { q = "", category = "" } = req.query;
+    res.json(getMemoryArticles({ q, category }));
+    return;
+  }
+
   try {
     const { q = "", category = "" } = req.query;
     const placeholders = categoryPlaceholders();
@@ -269,6 +419,17 @@ app.get("/api/articles", async (req, res) => {
 });
 
 app.get("/api/articles/:slug", async (req, res) => {
+  if (usingMemoryStore) {
+    const article = getMemoryArticle(req.params.slug);
+
+    if (!article) {
+      return res.status(404).json({ message: "Article not found." });
+    }
+
+    res.json(article);
+    return;
+  }
+
   try {
     const [rows] = await db.query(
       `
@@ -304,6 +465,16 @@ app.get("/api/articles/:slug", async (req, res) => {
 });
 
 app.post("/api/articles", async (req, res) => {
+  if (usingMemoryStore) {
+    try {
+      res.status(201).json(createMemoryArticle(req.body));
+    } catch (error) {
+      res.status(error.statusCode || 500).json({ message: error.message || "Could not save article." });
+    }
+
+    return;
+  }
+
   try {
     const title = String(req.body.title || "").trim();
     const excerpt = String(req.body.excerpt || "").trim();
@@ -377,12 +548,13 @@ app.use((req, res, next) => {
 });
 
 initializeNews()
+  .catch((error) => {
+    usingMemoryStore = true;
+    initializeMemoryStore();
+    console.warn("Database unavailable; starting with sample in-memory articles:", error.message);
+  })
   .then(() => {
     app.listen(PORT, () => {
       console.log(`Tomujin Article running at http://localhost:${PORT}`);
     });
-  })
-  .catch((error) => {
-    console.error("Could not initialize news site:", error);
-    process.exit(1);
   });

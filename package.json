@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "cd backend && npm start",
-    "dev": "cd backend && npm run dev"
+    "build": "npm --prefix backend install",
+    "start": "npm --prefix backend start",
+    "dev": "npm --prefix backend run dev"
   }
 }
