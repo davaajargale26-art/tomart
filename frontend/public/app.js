@@ -86,14 +86,14 @@ function mountHome() {
 
 function renderCategories() {
   const buttons = [
-    `<button class="${state.activeCategory === "all" ? "is-active" : ""}" data-category="all">Бүгд</button>`,
+    `<button class="${state.activeCategory === "all" ? "is-active" : ""}" data-category="all" type="button" title="Бүх нийтлэлийг харах">Бүгд</button>`,
     ...state.categories.map((category) => {
       const count = Number(category.articleCount || 0);
 
       return `
-        <button class="${state.activeCategory === category.slug ? "is-active" : ""}" data-category="${category.slug}">
+        <button class="${state.activeCategory === category.slug ? "is-active" : ""}" data-category="${category.slug}" type="button" title="${escapeHtml(category.name)} ангиллыг харах">
           ${escapeHtml(category.name)}
-          <small>${count}</small>
+          <small aria-label="${count} нийтлэл">${count}</small>
         </button>
       `;
     }),
@@ -176,6 +176,7 @@ function renderArticles() {
             <h3>${escapeHtml(article.title)}</h3>
             <p>${escapeHtml(article.excerpt)}</p>
             <small>${escapeHtml(article.author)}</small>
+            <strong>Унших</strong>
           </div>
         </article>
       `
@@ -286,6 +287,10 @@ showAddArticle.addEventListener("click", (event) => {
 
 backTop.addEventListener("click", () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+window.addEventListener("scroll", () => {
+  backTop.classList.toggle("is-visible", window.scrollY > 460);
 });
 
 mountHome();

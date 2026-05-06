@@ -24,7 +24,8 @@ body {
   margin: 0;
   background: var(--mist);
   color: var(--ink);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Noto Sans", Arial, Helvetica, sans-serif;
+  font-weight: 500;
 }
 
 a,
@@ -60,10 +61,10 @@ button:disabled {
 
 .header-inner {
   display: grid;
-  grid-template-columns: auto minmax(220px, 1fr) auto;
+  grid-template-columns: auto minmax(520px, 1fr) auto;
   align-items: center;
-  gap: 24px;
-  width: min(1180px, calc(100% - 40px));
+  gap: 30px;
+  width: min(1480px, calc(100% - 40px));
   min-height: 82px;
   margin: 0 auto;
 }
@@ -92,7 +93,7 @@ button:disabled {
 }
 
 .brand-word strong {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 800;
 }
 
@@ -106,8 +107,8 @@ button:disabled {
   display: flex;
   justify-content: center;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
+  flex-wrap: nowrap;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -117,11 +118,12 @@ button:disabled {
   gap: 8px;
   min-height: 38px;
   border: 1px solid transparent;
-  padding: 0 12px;
+  padding: 0 10px;
   background: transparent;
   color: var(--muted);
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .main-nav button:hover,
@@ -129,6 +131,17 @@ button:disabled {
   border-color: var(--line);
   background: var(--field);
   color: var(--ink);
+}
+
+.main-nav button:focus-visible,
+.header-search button:focus-visible,
+.submit-button:focus-visible,
+.hero-overlay a:focus-visible,
+.form-actions button:focus-visible,
+.back-link:focus-visible,
+#backTop:focus-visible {
+  outline: 3px solid rgba(180, 35, 53, 0.28);
+  outline-offset: 3px;
 }
 
 .main-nav small {
@@ -152,7 +165,7 @@ button:disabled {
 
 .header-search {
   display: grid;
-  grid-template-columns: minmax(120px, 230px) auto;
+  grid-template-columns: minmax(150px, 290px) auto;
   min-height: 42px;
   border: 1px solid var(--line);
   background: var(--field);
@@ -200,6 +213,7 @@ button:disabled {
   color: var(--paper);
   font-size: 14px;
   font-weight: 800;
+  white-space: nowrap;
 }
 
 .submit-button:hover {
@@ -232,7 +246,7 @@ button:disabled {
 .hero-overlay {
   position: absolute;
   z-index: 1;
-  left: max(20px, calc((100% - 1180px) / 2));
+  left: max(20px, calc((100% - 1480px) / 2));
   bottom: clamp(28px, 7vw, 72px);
   width: min(760px, calc(100% - 40px));
   color: var(--paper);
@@ -250,8 +264,9 @@ button:disabled {
 
 .hero-overlay h1 {
   margin: 16px 0 14px;
-  font-size: clamp(42px, 7vw, 82px);
-  line-height: 0.98;
+  font-size: clamp(40px, 6vw, 76px);
+  line-height: 1.02;
+  font-weight: 900;
 }
 
 .hero-overlay p {
@@ -280,7 +295,7 @@ button:disabled {
 }
 
 .section {
-  width: min(1180px, calc(100% - 40px));
+  width: min(1480px, calc(100% - 40px));
   margin: 0 auto;
   padding: 54px 0 76px;
 }
@@ -298,8 +313,9 @@ button:disabled {
 
 .section-heading h2 {
   margin: 0;
-  font-size: clamp(30px, 4vw, 48px);
-  line-height: 1.05;
+  font-size: clamp(28px, 3.4vw, 46px);
+  line-height: 1.08;
+  font-weight: 900;
 }
 
 .status {
@@ -346,6 +362,10 @@ button:disabled {
   filter: saturate(1) contrast(1.02);
 }
 
+.post-card:hover {
+  box-shadow: var(--shadow);
+}
+
 .post-copy {
   display: grid;
   align-content: start;
@@ -385,6 +405,17 @@ button:disabled {
   font-weight: 800;
 }
 
+.post-copy strong {
+  display: inline-flex;
+  width: max-content;
+  min-height: 36px;
+  align-items: center;
+  border-bottom: 2px solid var(--brand);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 900;
+}
+
 .publish-band {
   background: var(--forest);
   color: var(--paper);
@@ -394,7 +425,7 @@ button:disabled {
   display: grid;
   grid-template-columns: minmax(220px, 0.42fr) minmax(0, 1fr);
   gap: 40px;
-  width: min(1180px, calc(100% - 40px));
+  width: min(1480px, calc(100% - 40px));
   margin: 0 auto;
   padding: 74px 0;
 }
@@ -475,7 +506,7 @@ button:disabled {
 }
 
 .article-detail {
-  width: min(1180px, calc(100% - 40px));
+  width: min(1480px, calc(100% - 40px));
   margin: 0 auto;
   padding: 48px 0 84px;
 }
@@ -547,7 +578,7 @@ button:disabled {
   display: flex;
   justify-content: space-between;
   gap: 24px;
-  width: min(1180px, calc(100% - 40px));
+  width: min(1480px, calc(100% - 40px));
   margin: 0 auto;
   padding: 30px 0;
   color: var(--muted);
@@ -571,11 +602,20 @@ button:disabled {
   color: var(--paper);
   font-size: 13px;
   font-weight: 900;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(12px);
 }
 
 #backTop:hover {
   background: var(--brand);
   transform: translateY(-2px);
+}
+
+#backTop.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
 }
 
 @media (max-width: 1020px) {
@@ -592,6 +632,7 @@ button:disabled {
 
   .main-nav {
     justify-content: flex-start;
+    flex-wrap: wrap;
   }
 
   .header-actions {
