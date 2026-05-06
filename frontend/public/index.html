@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="mn">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Tomujin Article нийтлэлийн сайт" />
+    <title>Tomujin Article</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="/">
+          <span class="brand-mark">T</span>
+          <span class="brand-word">
+            <strong>TOMUJIN</strong>
+            <small>ARTICLE</small>
+          </span>
+        </a>
+
+        <nav class="main-nav" id="categoryNav" aria-label="Article categories"></nav>
+
+        <div class="header-actions">
+          <form class="header-search" id="headerSearchForm">
+            <input id="headerSearchInput" type="search" placeholder="Search articles" />
+            <button type="submit" aria-label="Search">⌕</button>
+          </form>
+          <a class="submit-button" id="showAddArticle" href="#addArticle">Add Article</a>
+        </div>
+      </div>
+    </header>
+
+    <main id="app"></main>
+
+    <template id="homeTemplate">
+      <section class="hero">
+        <img class="hero-image" src="/images/stagknight.jpg" alt="" />
+        <div class="hero-overlay">
+          <span class="eyebrow">Tomujin / Featured</span>
+          <h1>Articles, thoughts, and quiet notes in one calm place.</h1>
+          <p>Read people’s writing, search by title, choose a group, and open each post as a full article.</p>
+          <a href="#news">Read Articles</a>
+        </div>
+      </section>
+
+      <section class="section" id="news">
+        <div class="section-heading">
+          <h2>Latest Articles</h2>
+          <p>Click any post to open the full reading page.</p>
+        </div>
+
+        <p class="status" id="status"></p>
+        <div class="post-grid" id="articleGrid"></div>
+      </section>
+
+      <section class="section add-section" id="addArticle">
+        <div class="section-heading">
+          <h2>Add New Article</h2>
+          <p>Write a new post here and it will be saved into MySQL.</p>
+        </div>
+
+        <form class="article-form" id="articleForm">
+          <label>
+            Title
+            <input name="title" type="text" placeholder="Article title" required />
+          </label>
+          <label>
+            Author
+            <input name="author" type="text" placeholder="Writer name" required />
+          </label>
+          <label>
+            Category
+            <select name="categorySlug" id="articleCategory" required></select>
+          </label>
+          <label>
+            Image URL
+            <input name="imageUrl" type="url" placeholder="/images/stagknight.jpg" />
+          </label>
+          <label class="wide">
+            Short description
+            <textarea name="excerpt" rows="3" placeholder="Small summary" required></textarea>
+          </label>
+          <label class="wide">
+            Full article
+            <textarea name="body" rows="9" placeholder="Write the article here" required></textarea>
+          </label>
+          <div class="form-actions">
+            <p id="formStatus"></p>
+            <button type="submit">Publish Article</button>
+          </div>
+        </form>
+      </section>
+    </template>
+
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <strong>TOMUJIN ARTICLE</strong>
+        <span>© 2026 · Article-only learning project</span>
+      </div>
+      <button type="button" id="backTop">↑</button>
+    </footer>
+  </body>
+</html>
