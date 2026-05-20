@@ -228,6 +228,38 @@ function asPublicImageUrl(value) {
   return value || fallbackImageUrl;
 }
 
+const approvedCategoryDefinitions = [
+  ["oguulleg", "Өгүүллэг"],
+  ["esse", "Эссе"],
+  ["dursamj", "Дурсамж"],
+  ["yariltslaga", "Ярилцлага"],
+  ["yaruu-nairag", "Яруу найраг"],
+  ["niitlel", "Нийтлэл"],
+  ["shuumej", "Шүүмж"],
+  ["nom", "Ном"],
+  ["zurvas", "Зурвас"],
+  ["podcast", "Подкаст"],
+];
+const approvedCategoryBySlug = new Map(approvedCategoryDefinitions.map(([slug, name]) => [slug, { slug, name }]));
+const approvedCategoryByName = new Map(approvedCategoryDefinitions.map(([slug, name]) => [name.trim().toLowerCase(), { slug, name }]));
+const approvedCategorySlugs = new Set(approvedCategoryDefinitions.map(([slug]) => slug));
+const legacyCategoryFallbackSlug = "niitlel";
+
+function approvedCategoryForSlug(slug) {
+  const normalizedSlug = normalizeSlug(slug);
+  return approvedCategoryBySlug.get(normalizedSlug) || approvedCategoryBySlug.get(legacyCategoryFallbackSlug);
+}
+
+function approvedCategoryForPayload(payload = {}) {
+  const requestedSlug = normalizeSlug(payload.slug || payload.categorySlug || payload.value || "");
+  if (approvedCategoryBySlug.has(requestedSlug)) return approvedCategoryBySlug.get(requestedSlug);
+
+  const requestedName = String(payload.name || payload.label || "").trim().toLowerCase();
+  if (approvedCategoryByName.has(requestedName)) return approvedCategoryByName.get(requestedName);
+
+  throw createHttpError("Category must be one of the approved Tom/Art categories.", 400);
+}
+
 function normalizeFeaturedOrder(value) {
   if (value === null || value === undefined || value === "") return null;
   const order = Number(value);
@@ -241,7 +273,13 @@ function normalizeCategorySlugs(payload = {}) {
       ? payload.categories.map((category) => (typeof category === "string" ? category : category?.slug))
       : [payload.categorySlug];
 
-  return [...new Set(rawValues.map((value) => normalizeSlug(value)).filter(Boolean).slice(0, 8))];
+  return [...new Set(
+    rawValues
+      .map((value) => normalizeSlug(value))
+      .filter(Boolean)
+      .map((slug) => (approvedCategorySlugs.has(slug) ? slug : legacyCategoryFallbackSlug))
+      .slice(0, 8)
+  )];
 }
 
 function normalizeGraduationYears(value) {
@@ -522,8 +560,9 @@ function normalizeTags(value) {
 }
 
 function normalizeCategoryPayload(payload = {}) {
-  const name = sanitizePlainText(payload.name, 140);
-  const slug = normalizeSlug(payload.slug || name);
+  const approvedCategory = approvedCategoryForPayload(payload);
+  const name = sanitizePlainText(approvedCategory.name, 140);
+  const slug = approvedCategory.slug;
 
   if (!name || !slug) {
     throw createHttpError("Category name and slug are required.");
@@ -784,22 +823,7 @@ async function ensureConfiguredDbAdmin() {
   );
 }
 
-const seedCategories = [
-  ["education", "Education"],
-  ["science", "Science"],
-  ["technology", "Technology"],
-  ["business", "Business"],
-  ["psychology", "Psychology"],
-  ["interesting-facts", "Interesting Facts"],
-  ["fantasy", "Fantasy"],
-  ["literature", "Literature"],
-  ["social-issues", "Social Issues"],
-  ["self-development", "Self Development"],
-  ["school-life", "School Life"],
-  ["university-life", "University Life"],
-  ["career", "Career"],
-  ["art-design", "Art & Design"],
-];
+const seedCategories = approvedCategoryDefinitions;
 
 const graduationYearOptions = [2020, 2021, 2022, 2023, 2024, 2025, 2026];
 const defaultGraduationYear = 2026;
@@ -807,8 +831,8 @@ const defaultGraduationYear = 2026;
 const seedArticles = [
   {
     slug: "tomujin-first-note",
-    category: "school-life",
-    categories: ["school-life"],
+    category: "niitlel",
+    categories: ["niitlel"],
     graduationYears: [2026],
     contentType: "Article",
     tags: ["school publication", "student writing"],
@@ -824,8 +848,8 @@ const seedArticles = [
   },
   {
     slug: "quiet-voices",
-    category: "literature",
-    categories: ["literature"],
+    category: "niitlel",
+    categories: ["niitlel"],
     graduationYears: [2026],
     contentType: "Reflection",
     tags: ["student voice", "archive"],
@@ -841,8 +865,8 @@ const seedArticles = [
   },
   {
     slug: "how-to-read-updates",
-    category: "career",
-    categories: ["career"],
+    category: "niitlel",
+    categories: ["niitlel"],
     graduationYears: [2026],
     contentType: "Guide",
     tags: ["reading", "archive"],
@@ -858,8 +882,8 @@ const seedArticles = [
   },
   {
     slug: "weekly-notes",
-    category: "interesting-facts",
-    categories: ["interesting-facts"],
+    category: "niitlel",
+    categories: ["niitlel"],
     graduationYears: [2026],
     contentType: "Record",
     tags: ["weekly notes", "ideas"],
@@ -928,18 +952,20 @@ function initializeMemoryStore() {
 }
 
 function mapMemoryArticle(article) {
-  const categorySlugs = article.category_slugs?.length
+  const rawCategorySlugs = article.category_slugs?.length
     ? article.category_slugs
     : [memoryCategories.find((item) => item.id === article.category_id)?.slug].filter(Boolean);
-  const categories = categorySlugs
-    .map((slug) => memoryCategories.find((item) => item.slug === slug))
-    .filter(Boolean)
-    .map((category) => ({
-      id: category.id,
-      slug: category.slug,
-      name: category.name,
-    }));
-  const category = categories[0] || memoryCategories.find((item) => item.id === article.category_id);
+  const categories = [...new Set(rawCategorySlugs.map((slug) => approvedCategoryForSlug(slug).slug))]
+    .map((slug) => {
+      const approvedCategory = approvedCategoryForSlug(slug);
+      const storedCategory = memoryCategories.find((item) => item.slug === approvedCategory.slug);
+      return {
+        id: storedCategory?.id || null,
+        slug: approvedCategory.slug,
+        name: approvedCategory.name,
+      };
+    });
+  const category = categories[0] || approvedCategoryForSlug(legacyCategoryFallbackSlug);
 
   return {
     id: article.id,
@@ -978,20 +1004,26 @@ function mapMemoryArticle(article) {
 }
 
 function getMemoryCategories() {
-  return memoryCategories
-    .map((category) => ({
-      id: category.id,
-      slug: category.slug,
-      name: category.name,
-      articleCount: memoryArticles.filter((article) =>
-        article.status === "published" &&
-        !article.deleted_at &&
-        (article.category_slugs?.length
-          ? article.category_slugs
-          : [memoryCategories.find((item) => item.id === article.category_id)?.slug]).includes(category.slug)
-      ).length,
-    }))
-    .sort((left, right) => left.name.localeCompare(right.name));
+  const counts = new Map(approvedCategoryDefinitions.map(([slug]) => [slug, 0]));
+  memoryArticles.forEach((article) => {
+    if (article.status !== "published" || article.deleted_at) return;
+    const rawCategorySlugs = article.category_slugs?.length
+      ? article.category_slugs
+      : [memoryCategories.find((item) => item.id === article.category_id)?.slug].filter(Boolean);
+    [...new Set(rawCategorySlugs.map((slug) => approvedCategoryForSlug(slug).slug))].forEach((slug) => {
+      counts.set(slug, Number(counts.get(slug) || 0) + 1);
+    });
+  });
+
+  return approvedCategoryDefinitions.map(([slug, name], index) => {
+    const storedCategory = memoryCategories.find((item) => item.slug === slug);
+    return {
+      id: storedCategory?.id || index + 1,
+      slug,
+      name,
+      articleCount: counts.get(slug) || 0,
+    };
+  });
 }
 
 function createMemoryCategory(payload) {
@@ -1026,6 +1058,7 @@ function updateMemoryCategory(currentSlug, payload) {
 
 function getMemoryArticles({ q = "", category = "", year = "", status = "", contentType = "", author = "", editorPick = false, includeAdmin = false } = {}) {
   const search = String(q).trim().toLowerCase();
+  const selectedCategory = normalizeSlug(category);
   const selectedYear = Number(year);
   const selectedStatus = normalizeArticleStatus(status, "");
   const selectedContentType = contentType ? normalizeContentType(contentType) : "";
@@ -1042,7 +1075,8 @@ function getMemoryArticles({ q = "", category = "", year = "", status = "", cont
         return false;
       }
       if (editorPick && !article.is_featured) return false;
-      if (category && category !== "all" && !categorySlugs.includes(category)) return false;
+      const approvedCategorySlugsForArticle = [...new Set(categorySlugs.map((slug) => approvedCategoryForSlug(slug).slug))];
+      if (selectedCategory && selectedCategory !== "all" && !approvedCategorySlugsForArticle.includes(selectedCategory)) return false;
       if (selectedContentType && normalizeContentType(article.content_type) !== selectedContentType) return false;
       if (selectedAuthorSlug && (article.author_slug || authorSlugFromName(article.author)) !== selectedAuthorSlug) return false;
       if (graduationYearOptions.includes(selectedYear) && !(article.graduation_years || []).includes(selectedYear)) return false;
@@ -1766,7 +1800,8 @@ function mapArticle(row) {
     slug: row.category_slug,
     name: row.category_name,
   };
-  const categories = parseDbCategories(row.category_pairs, primaryCategory);
+  const categories = [...new Set(parseDbCategories(row.category_pairs, primaryCategory).map((category) => approvedCategoryForSlug(category.slug).slug))]
+    .map((slug) => approvedCategoryForSlug(slug));
 
   return {
     id: row.id,
@@ -1790,7 +1825,7 @@ function mapArticle(row) {
     createdByAdminId: row.created_by_admin_id || null,
     updatedByAdminId: row.updated_by_admin_id || null,
     publishedAt: row.published_at,
-    category: categories[0] || primaryCategory,
+    category: categories[0] || approvedCategoryForSlug(legacyCategoryFallbackSlug),
     categories,
     categorySlugs: categories.map((category) => category.slug),
     graduationYears: parseDbGraduationYears(row.graduation_years),
@@ -1852,6 +1887,30 @@ function categoryArticleFilterSql() {
       WHERE filter_ac.article_id = a.id AND filter_c.slug = ?
     )
   `;
+}
+
+function approvedCategoryArticleFilterSql(category) {
+  if (normalizeSlug(category) === legacyCategoryFallbackSlug) {
+    return `
+      EXISTS (
+        SELECT 1
+        FROM news_article_categories filter_ac
+        JOIN news_categories filter_c ON filter_c.id = filter_ac.category_id
+        WHERE filter_ac.article_id = a.id
+          AND (filter_c.slug = ? OR filter_c.slug NOT IN (${approvedCategoryDefinitions.map(() => "?").join(", ")}))
+      )
+    `;
+  }
+
+  return categoryArticleFilterSql();
+}
+
+function approvedCategoryArticleFilterParams(category) {
+  if (normalizeSlug(category) === legacyCategoryFallbackSlug) {
+    return [legacyCategoryFallbackSlug, ...approvedCategoryDefinitions.map(([slug]) => slug)];
+  }
+
+  return [normalizeSlug(category)];
 }
 
 function graduationYearFilterSql() {
@@ -2109,7 +2168,21 @@ app.get("/api/categories", async (_req, res) => {
       `
     );
 
-    res.json(rows);
+    const counts = new Map(approvedCategoryDefinitions.map(([slug]) => [slug, 0]));
+    rows.forEach((row) => {
+      const approvedCategory = approvedCategoryForSlug(row.slug);
+      counts.set(approvedCategory.slug, Number(counts.get(approvedCategory.slug) || 0) + Number(row.articleCount || 0));
+    });
+
+    res.json(approvedCategoryDefinitions.map(([slug, name], index) => {
+      const existing = rows.find((row) => row.slug === slug);
+      return {
+        id: existing?.id || index + 1,
+        slug,
+        name,
+        articleCount: counts.get(slug) || 0,
+      };
+    }));
   } catch (error) {
     logRouteError("GET /api/categories", error);
     ensureMemoryFallbackReady();
@@ -2598,8 +2671,8 @@ app.get("/api/articles", async (req, res) => {
     const params = [];
 
     if (category && category !== "all") {
-      where.push(categoryArticleFilterSql());
-      params.push(category);
+      where.push(approvedCategoryArticleFilterSql(category));
+      params.push(...approvedCategoryArticleFilterParams(category));
     }
 
     if (contentType && contentType !== "all") {

@@ -72,12 +72,8 @@
 
     <header class="site-header">
       <div class="header-inner">
-        <a class="brand" href="/" aria-label="Tomujin Article home">
-          <span class="brand-mark" aria-hidden="true">T</span>
-          <span class="brand-copy">
-            <strong>Tom/Art</strong>
-            <small>Student publication</small>
-          </span>
+        <a class="brand" href="/" aria-label="Tom/Art home">
+          <img class="brand-logo" src="/images/tom-art-logo-top-cropped.png" alt="Tom/Art" />
         </a>
 
         <div class="mobile-header-actions" aria-label="Mobile tools">
@@ -186,14 +182,19 @@
       <section class="admin-dashboard">
         <div class="admin-shell">
           <div class="admin-topbar">
-            <div class="section-heading align-left">
-              <span>Admin</span>
-              <h2>Dashboard</h2>
+            <div class="admin-brand">
+              <span class="admin-brand-mark">T/A</span>
+              <div>
+                <strong>Tom/Art Admin</strong>
+                <small>Publication dashboard</small>
+              </div>
             </div>
-            <div class="admin-identity" id="adminIdentity"></div>
-            <div class="admin-toolbar">
-              <button class="back-link" type="button" id="adminBackHome">Нүүр хуудас</button>
-              <button class="delete-link" type="button" id="adminLogoutButton">Logout</button>
+            <div class="admin-topbar-actions">
+              <div class="admin-identity" id="adminIdentity"></div>
+              <div class="admin-toolbar">
+                <button class="back-link" type="button" id="adminBackHome">Нүүр хуудас</button>
+                <button class="delete-link" type="button" id="adminLogoutButton">Logout</button>
+              </div>
             </div>
           </div>
 
@@ -280,30 +281,32 @@
                 Body/content
                 <textarea name="body" rows="10" placeholder="Write the full article body here"></textarea>
               </label>
-              <div class="admin-editor-title wide compact-title">
-                <strong>Alumni Profile</strong>
-                <span>Shown on the author's archive page.</span>
+              <div class="admin-form-card admin-author-card wide">
+                <div class="admin-editor-title compact-title">
+                  <strong>Authors</strong>
+                  <span>Profile details shown on the author's archive page.</span>
+                </div>
+                <label class="wide">
+                  Bio
+                  <textarea name="authorBio" rows="3" placeholder="Short alumni bio"></textarea>
+                </label>
+                <label>
+                  University
+                  <input name="authorUniversity" type="text" placeholder="University name" />
+                </label>
+                <label>
+                  Major
+                  <input name="authorMajor" type="text" placeholder="Major or program" />
+                </label>
+                <label>
+                  Current Work
+                  <input name="authorCurrentWork" type="text" placeholder="Current role or work" />
+                </label>
+                <label class="wide">
+                  Social Links
+                  <textarea name="authorSocialLinks" rows="2" placeholder="One link per line"></textarea>
+                </label>
               </div>
-              <label class="wide">
-                Bio
-                <textarea name="authorBio" rows="3" placeholder="Short alumni bio"></textarea>
-              </label>
-              <label>
-                University
-                <input name="authorUniversity" type="text" placeholder="University name" />
-              </label>
-              <label>
-                Major
-                <input name="authorMajor" type="text" placeholder="Major or program" />
-              </label>
-              <label>
-                Current Work
-                <input name="authorCurrentWork" type="text" placeholder="Current role or work" />
-              </label>
-              <label class="wide">
-                Social Links
-                <textarea name="authorSocialLinks" rows="2" placeholder="One link per line"></textarea>
-              </label>
               <div class="admin-audit wide">
                 <div class="admin-list-heading">
                   <strong>Audit history</strong>

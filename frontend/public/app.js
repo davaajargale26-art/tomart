@@ -38,20 +38,34 @@ const themeStorageKey = "tomujinTheme";
 const fallbackImageUrl = "/images/stagknight.jpg";
 const featuredLimit = 4;
 const graduationYears = [2020, 2021, 2022, 2023, 2024, 2025, 2026];
+const approvedCategories = [
+  { label: "Өгүүллэг", slug: "oguulleg" },
+  { label: "Эссе", slug: "esse" },
+  { label: "Дурсамж", slug: "dursamj" },
+  { label: "Ярилцлага", slug: "yariltslaga" },
+  { label: "Яруу найраг", slug: "yaruu-nairag" },
+  { label: "Нийтлэл", slug: "niitlel" },
+  { label: "Шүүмж", slug: "shuumej" },
+  { label: "Ном", slug: "nom" },
+  { label: "Зурвас", slug: "zurvas" },
+  { label: "Подкаст", slug: "podcast" },
+];
+const approvedCategorySlugSet = new Set(approvedCategories.map((category) => category.slug));
+const legacyCategoryFallbackSlug = "niitlel";
 const writingMenuCategories = [
-  { label: "Өгүүллэг", slug: "oguulleg", aliases: ["fantasy", "games"], names: ["Fantasy", "Answer"] },
-  { label: "Эссе", slug: "esse", aliases: ["guides", "education"], names: ["Эсээ", "Guide", "Education"] },
-  { label: "Дурсамж", slug: "dursamj", aliases: ["school-life", "university-life", "self-development"], names: ["School Life", "University Life", "Self Development"] },
-  { label: "Ярилцлага", slug: "yariltslaga", aliases: ["culture"], names: ["Ярилцлага"] },
-  { label: "Яруу найраг", slug: "yaruu-nairag", aliases: ["literature"], names: ["Literature"] },
-  { label: "Нийтлэл", slug: "niitlel", aliases: ["updates", "science", "technology"], names: ["Нийтлэл", "Science", "Technology"] },
-  { label: "Шүүмж", slug: "shuumej", aliases: ["interesting-facts", "psychology"], names: ["Interesting Facts", "Psychology"] },
+  { label: "Өгүүллэг", slug: "oguulleg" },
+  { label: "Эссе", slug: "esse", names: ["Эсээ"] },
+  { label: "Дурсамж", slug: "dursamj" },
+  { label: "Ярилцлага", slug: "yariltslaga" },
+  { label: "Яруу найраг", slug: "yaruu-nairag" },
+  { label: "Нийтлэл", slug: "niitlel" },
+  { label: "Шүүмж", slug: "shuumej" },
 ];
 const homepageSections = [
   { key: "writing", label: "Сурагчдын Бичвэр", description: "Өгүүллэг, эссе, дурсамж, ярилцлага, яруу найраг, нийтлэл, шүүмж." },
-  { key: "books", label: "Ном", description: "Ном, уншлага, зохиолын тухай бичвэрүүд.", aliases: ["literature", "interesting-facts", "education", "fantasy", "art-design"] },
-  { key: "notes", label: "Зурвас", description: "Богино тэмдэглэл, бодол, сургуулийн амьдрал.", aliases: ["school-life", "university-life", "self-development", "social-issues", "career", "business"] },
-  { key: "podcast", label: "Подкаст", description: "Яриа, сонсох хэлбэрийн нийтлэлүүд.", aliases: ["technology", "psychology"], contentTypes: ["Podcast", "Audio"] },
+  { key: "books", label: "Ном", description: "Ном, уншлага, зохиолын тухай бичвэрүүд.", aliases: ["nom"], contentTypes: ["Book"] },
+  { key: "notes", label: "Зурвас", description: "Богино тэмдэглэл, бодол, сургуулийн амьдрал.", aliases: ["zurvas"], contentTypes: ["Record"] },
+  { key: "podcast", label: "Подкаст", description: "Яриа, сонсох хэлбэрийн нийтлэлүүд.", aliases: ["podcast"], contentTypes: ["Podcast", "Audio"] },
 ];
 const defaultContentTypes = [
   "Essay",
@@ -151,9 +165,27 @@ function articleCategoriesList(article = {}) {
   return article.category ? [article.category] : [];
 }
 
+function approvedCategoryForSlug(slug = "") {
+  const normalizedSlug = String(slug || "").trim();
+  return approvedCategories.find((category) => category.slug === normalizedSlug)
+    || approvedCategories.find((category) => category.slug === legacyCategoryFallbackSlug);
+}
+
+function normalizeVisibleCategory(category = {}) {
+  if (!category) return approvedCategoryForSlug(legacyCategoryFallbackSlug);
+  const slugMatch = approvedCategorySlugSet.has(category.slug) ? approvedCategoryForSlug(category.slug) : null;
+  const nameMatch = approvedCategories.find((item) => normalizedText(item.label) === normalizedText(category.name));
+  return slugMatch || nameMatch || approvedCategoryForSlug(legacyCategoryFallbackSlug);
+}
+
+function normalizeVisibleCategories(categories = []) {
+  const visible = categories.map(normalizeVisibleCategory);
+  return approvedCategories.filter((category) => visible.some((item) => item.slug === category.slug));
+}
+
 function articleCategoryNames(article = {}) {
-  return articleCategoriesList(article)
-    .map((category) => category?.name)
+  return normalizeVisibleCategories(articleCategoriesList(article))
+    .map((category) => category?.label)
     .filter(Boolean)
     .join(" / ");
 }
@@ -163,6 +195,15 @@ function articleCategorySlugs(article = {}) {
   return articleCategoriesList(article)
     .map((category) => category?.slug)
     .filter(Boolean);
+}
+
+function articleVisibleCategorySlugs(article = {}) {
+  const categoryObjects = articleCategoriesList(article);
+  if (categoryObjects.length) {
+    return normalizeVisibleCategories(categoryObjects).map((category) => category.slug);
+  }
+
+  return [...new Set(articleCategorySlugs(article).map((slug) => approvedCategoryForSlug(slug).slug))];
 }
 
 function articleYearValues(article = {}) {
@@ -272,19 +313,46 @@ function sectionSlugs(section = {}) {
 }
 
 function articleMatchesSlugs(article = {}, slugs = []) {
-  const articleSlugs = articleCategorySlugs(article);
+  const articleSlugs = articleVisibleCategorySlugs(article);
   return articleSlugs.some((slug) => slugs.includes(slug));
+}
+
+function articleMatchesCategoryConfig(article = {}, config = {}) {
+  const slugs = Array.from(new Set(categoryConfigSlugs(config).concat(publicCategorySlug(config))));
+  if (articleMatchesSlugs(article, slugs)) return true;
+
+  const names = categoryConfigNames(config);
+  return articleCategoriesList(article).some((category) => names.includes(normalizedText(category?.name)));
+}
+
+function articleMatchesContentTypes(article = {}, contentTypes = []) {
+  const currentType = normalizedText(articleContentType(article));
+  return contentTypes.map(normalizedText).includes(currentType);
 }
 
 function articleMatchesSection(article = {}, section = {}) {
   if (!section) return false;
   if (articleMatchesSlugs(article, sectionSlugs(section))) return true;
   const contentTypes = section.contentTypes || [];
-  return contentTypes.includes(articleContentType(article));
+  return articleMatchesContentTypes(article, contentTypes);
 }
 
 function latestArticlesForSection(section = {}, limit = 5) {
   return state.articles.filter((article) => articleMatchesSection(article, section)).slice(0, limit);
+}
+
+function uniqueArticles(articles = []) {
+  const seen = new Set();
+  return articles.filter((article) => {
+    const key = article.slug || article.id;
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function sectionArticles(section = {}, limit = 7) {
+  return uniqueArticles(state.articles.filter((article) => articleMatchesSection(article, section))).slice(0, limit);
 }
 
 function articleMetaParts(article = {}, { includeAuthor = false } = {}) {
@@ -425,7 +493,7 @@ function renderContentTypeSelect(select, selectedValue = "Article") {
 }
 
 function renderTaxonomyControls(categoryContainer, yearContainer, article = {}) {
-  const selectedCategories = articleCategorySlugs(article);
+  const selectedCategories = articleVisibleCategorySlugs(article);
   const selectedYears = articleYearValues(article);
   const currentYear = new Date().getFullYear();
   const defaultYear = graduationYears.includes(currentYear) ? currentYear : graduationYears[graduationYears.length - 1];
@@ -444,7 +512,7 @@ function renderTaxonomyControls(categoryContainer, yearContainer, article = {}) 
 }
 
 function addTaxonomyPayload(payload, form) {
-  payload.categorySlugs = getCheckedValues(form, "categorySlugs");
+  payload.categorySlugs = getCheckedValues(form, "categorySlugs").filter((slug) => approvedCategorySlugSet.has(slug));
   payload.graduationYears = getCheckedValues(form, "graduationYears").map((year) => Number(year));
   delete payload.categorySlug;
   return payload;
@@ -1614,6 +1682,11 @@ async function openAdminDashboard({ pushUrl = false } = {}) {
       return;
     }
 
+    if (!approvedCategorySlugSet.has(slug) && !approvedCategories.some((category) => normalizedText(category.label) === normalizedText(name))) {
+      setAdminCategoryStatus("Only the approved Tom/Art categories can be saved.", "error");
+      return;
+    }
+
     submitButton.disabled = true;
     setAdminCategoryStatus(originalSlug ? "Saving category..." : "Creating category...");
 
@@ -1765,7 +1838,18 @@ function closeCategoryDropdowns() {
   });
 }
 async function loadCategories() {
-  state.categories = await fetchJson("/api/categories");
+  const loadedCategories = await fetchJson("/api/categories");
+  const countBySlug = new Map();
+  (Array.isArray(loadedCategories) ? loadedCategories : []).forEach((category) => {
+    const visibleCategory = normalizeVisibleCategory(category);
+    countBySlug.set(visibleCategory.slug, Number(countBySlug.get(visibleCategory.slug) || 0) + Number(category.articleCount || 0));
+  });
+  state.categories = approvedCategories.map((category, index) => ({
+    id: index + 1,
+    slug: category.slug,
+    name: category.label,
+    articleCount: countBySlug.get(category.slug) || 0,
+  }));
   renderCategories();
 }
 
@@ -2037,6 +2121,95 @@ function openSectionArchive(sectionKey = "") {
   loadArticles({ scrollNews: true });
 }
 
+function openCategoryArchive(categorySlug = "") {
+  state.activeYear = "";
+  state.activeAuthor = "";
+  state.activeMainSection = "";
+  state.activeCategory = categorySlug;
+  state.activePage = 1;
+  renderCategories();
+  closeMobileHeaderPanels();
+  loadArticles({ scrollNews: true });
+}
+
+function renderHomeSectionFrame(section = {}, bodyHtml = "", { className = "" } = {}) {
+  return `
+    <section class="home-category-section ${className}" data-home-section="${escapeHtml(section.key)}">
+      <div class="home-section-heading">
+        <div>
+          <span>${escapeHtml(section.description)}</span>
+          <h3>${escapeHtml(section.label)}</h3>
+        </div>
+        <button type="button" data-section-open="${escapeHtml(section.key)}">Цааш унших</button>
+      </div>
+      ${bodyHtml || '<p class="home-empty-note">Энэ хэсэгт нийтлэл хараахан алга.</p>'}
+    </section>
+  `;
+}
+
+function renderWritingHomeSection(section = {}) {
+  const groupHtml = writingMenuCategories
+    .map((config) => {
+      const articles = uniqueArticles(state.articles.filter((article) => articleMatchesCategoryConfig(article, config))).slice(0, 4);
+      const categorySlug = publicCategorySlug(config);
+
+      if (!articles.length) {
+        return "";
+      }
+
+      return `
+        <section class="writing-subsection">
+          <div class="writing-subsection-heading">
+            <div>
+              <span>Сурагчдын Бичвэр</span>
+              <h4>${escapeHtml(config.label)}</h4>
+            </div>
+            <button type="button" data-category-open="${escapeHtml(categorySlug)}">Цааш унших</button>
+          </div>
+          <div class="writing-card-grid">
+            ${articles.map((article, index) => renderPostCard(article, {
+              className: index === 0 ? "home-small-card writing-lead-card" : "home-small-card",
+              dataName: "home-slug",
+            })).join("")}
+          </div>
+        </section>
+      `;
+    })
+    .join("");
+
+  return renderHomeSectionFrame(section, groupHtml || '<p class="home-empty-note">Сурагчдын бичвэр хэсэгт нийтлэл хараахан алга.</p>', {
+    className: "writing-home-section",
+  });
+}
+
+function renderStandardHomeSection(section = {}) {
+  const articles = sectionArticles(section, 7);
+  const [featuredArticle, ...smallArticles] = articles;
+
+  if (!featuredArticle) {
+    return renderHomeSectionFrame(section, '<p class="home-empty-note">Энэ хэсэгт нийтлэл хараахан алга.</p>');
+  }
+
+  return renderHomeSectionFrame(section, `
+    <div class="home-section-layout">
+      ${renderPostCard(featuredArticle, { className: "home-feature-card", dataName: "home-slug" })}
+      <div class="home-small-list">
+        ${
+          smallArticles.length
+            ? smallArticles
+                .map((article) => renderPostCard(article, { className: "home-small-card", dataName: "home-slug" }))
+                .join("")
+            : '<p class="home-empty-note">Энэ хэсэгт өөр нийтлэл хараахан алга.</p>'
+        }
+      </div>
+    </div>
+  `);
+}
+
+function renderHomeSection(section = {}) {
+  return section.key === "writing" ? renderWritingHomeSection(section) : renderStandardHomeSection(section);
+}
+
 function renderHomepageSections() {
   if (!articleGrid) return;
 
@@ -2044,45 +2217,14 @@ function renderHomepageSections() {
   articleGrid.classList.remove("category-card-grid");
   if (articlePagination) articlePagination.innerHTML = "";
 
-  articleGrid.innerHTML = homepageSections
-    .map((section) => {
-      const articles = latestArticlesForSection(section, 5);
-      const [featuredArticle, ...smallArticles] = articles;
-
-      return `
-        <section class="home-category-section" data-home-section="${escapeHtml(section.key)}">
-          <div class="home-section-heading">
-            <div>
-              <span>${escapeHtml(section.description)}</span>
-              <h3>${escapeHtml(section.label)}</h3>
-            </div>
-            <button type="button" data-section-open="${escapeHtml(section.key)}">Цааш унших</button>
-          </div>
-          ${
-            featuredArticle
-              ? `
-                <div class="home-section-layout">
-                  ${renderPostCard(featuredArticle, { className: "home-feature-card", dataName: "home-slug" })}
-                  <div class="home-small-list">
-                    ${
-                      smallArticles.length
-                        ? smallArticles
-                            .map((article) => renderPostCard(article, { className: "home-small-card", dataName: "home-slug" }))
-                            .join("")
-                        : '<p class="home-empty-note">Энэ хэсэгт өөр нийтлэл хараахан алга.</p>'
-                    }
-                  </div>
-                </div>
-              `
-              : '<p class="home-empty-note">Энэ хэсэгт нийтлэл хараахан алга.</p>'
-          }
-        </section>
-      `;
-    })
-    .join("");
+  articleGrid.innerHTML = homepageSections.map((section) => renderHomeSection(section)).join("");
 
   articleGrid.querySelectorAll("[data-section-open]").forEach((button) => {
     button.addEventListener("click", () => openSectionArchive(button.dataset.sectionOpen));
+  });
+
+  articleGrid.querySelectorAll("[data-category-open]").forEach((button) => {
+    button.addEventListener("click", () => openCategoryArchive(button.dataset.categoryOpen));
   });
 
   bindArticleCardLinks(articleGrid, "home-slug");
