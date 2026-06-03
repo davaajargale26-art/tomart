@@ -1582,6 +1582,32 @@ body[data-theme="dark"] .theme-icon-sun {
   line-height: 1;
 }
 
+.footer-contact-list {
+  margin-top: 14px;
+  display: grid;
+  gap: 9px;
+}
+
+.footer-contact-list a {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.35;
+  text-decoration: none;
+}
+
+.footer-contact-list a:hover {
+  color: var(--text);
+}
+
+.footer-contact-list svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+
 #backTop {
   position: fixed;
   right: 18px;
@@ -2783,6 +2809,19 @@ body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .footer-socials
 body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .footer-socials i {
   width: 18px;
   height: 18px;
+}
+
+body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .footer-contact-list a {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .footer-contact-list a:hover,
+body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .footer-contact-list a:focus-visible {
+  color: #ffffff;
+}
+
+body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .footer-contact-list svg {
+  color: #ffffff;
 }
 
 body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .footer-socials a,
