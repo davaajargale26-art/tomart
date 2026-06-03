@@ -6024,3 +6024,312 @@ body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .main-nav > .na
   opacity: 1;
   transform: scaleX(1);
 }
+
+/* Mobile public polish: compact header, carousel, cards, and footer. */
+@media (max-width: 820px) {
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    width: 100%;
+    overflow-x: clip;
+  }
+
+  html,
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) {
+    overflow-x: hidden;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .header-inner {
+    position: relative;
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
+    min-height: 0;
+    grid-template-columns: 1fr;
+    justify-content: stretch;
+    align-items: center;
+    gap: 0;
+    padding: 10px 104px 10px 16px;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .brand {
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .brand-logo {
+    height: 28px;
+    max-width: 112px;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .mobile-header-actions {
+    position: fixed;
+    top: 10px;
+    right: 16px;
+    z-index: 40;
+    display: inline-flex !important;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 6px;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) #mobileThemeToggle {
+    display: none !important;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .mobile-icon-button {
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    flex: 0 0 36px;
+    border-radius: 4px;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .mobile-menu-button span {
+    width: 18px;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .category-area,
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .header-actions {
+    display: none;
+    grid-column: 1 / -1;
+    width: 100%;
+    margin: 10px 0 0;
+  }
+
+  body.mobile-menu-open:not([data-view="admin"]):not([data-view="admin-dashboard"]) .category-area,
+  body.mobile-search-open:not([data-view="admin"]):not([data-view="admin-dashboard"]) .header-actions {
+    display: block;
+  }
+
+  body.mobile-search-open:not([data-view="admin"]):not([data-view="admin-dashboard"]) .header-actions .theme-toggle {
+    display: none;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .header-search {
+    width: 100%;
+    height: 38px;
+    margin: 0;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .header-search input {
+    min-height: 38px;
+    padding-inline: 12px 42px;
+    font-size: 15px;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .header-search button {
+    width: 38px;
+    min-height: 38px;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .main-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    padding: 0;
+    overflow: visible;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .main-nav button,
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .category-toggle,
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .nav-section,
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .nav-home {
+    min-height: 34px;
+    padding: 0 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    line-height: 1;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .nav-dropdown {
+    position: relative;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .nav-menu {
+    right: auto;
+    left: 0;
+    width: min(260px, calc(100vw - 32px));
+    max-height: 260px;
+    overflow-y: auto;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .hero {
+    width: min(100% - 32px, var(--container));
+    margin-top: 18px;
+    padding-block: 0 18px;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .hero-slide {
+    min-height: 0;
+    display: block;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .hero-media {
+    width: 100%;
+    max-height: none;
+    aspect-ratio: 16 / 8;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .hero-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .hero-overlay {
+    padding: 14px 0 0;
+    gap: 8px;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .hero-kicker,
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .hero-meta {
+    font-size: 11px;
+    line-height: 1.25;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .hero-overlay h1 {
+    font-size: 24px;
+    line-height: 1.08;
+    overflow-wrap: anywhere;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .hero-overlay p {
+    font-size: 15px;
+    line-height: 1.45;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .hero-arrow {
+    width: 36px;
+    height: 36px;
+    font-size: 20px;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .hero-arrow-left {
+    left: 8px;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .hero-arrow-right {
+    right: 8px;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .hero-dots {
+    margin-top: 12px;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .publication-main {
+    width: min(100% - 32px, var(--container));
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .publication-intro {
+    padding: 22px 0 18px;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .publication-intro h1 {
+    font-size: 26px;
+    line-height: 1.08;
+    overflow-wrap: anywhere;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .publication-intro p {
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .home-category-section {
+    padding-block: 22px;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .home-section-heading {
+    gap: 10px;
+    padding-bottom: 8px;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .home-section-heading h3 {
+    font-size: 22px;
+    line-height: 1.12;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .home-section-heading button {
+    font-size: 11px;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .post-grid,
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .home-category-mosaic,
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .home-category-posts,
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .category-card-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .post-card,
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .home-small-card,
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .category-card-grid .post-card {
+    display: block;
+    max-width: none;
+    gap: 0;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .post-card .post-thumb,
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .home-small-card .post-thumb,
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .category-card-grid .post-card .post-thumb {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 8;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .post-copy {
+    min-height: 0;
+    padding: 12px 0 0;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .post-copy h3 {
+    font-size: 18px;
+    line-height: 1.16;
+    overflow-wrap: anywhere;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .post-meta,
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .post-copy p {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .site-footer {
+    padding-block: 28px;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .footer-inner {
+    grid-template-columns: 1fr;
+    gap: 26px;
+    padding: 0 18px;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .footer-column h2 {
+    font-size: 24px;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .footer-column p,
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .footer-contact-list a {
+    font-size: 15px;
+    line-height: 1.55;
+  }
+}
+
+@media (max-width: 420px) {
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .header-inner {
+    padding-inline: 14px;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .hero,
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .publication-main {
+    width: calc(100% - 28px);
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .hero-overlay h1,
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .publication-intro h1 {
+    font-size: 24px;
+  }
+}
