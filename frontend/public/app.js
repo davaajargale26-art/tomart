@@ -39,7 +39,8 @@ const adminNameStorageKey = "tomujinAdminName";
 const adminTokenStorageKey = "tomujinAdminToken";
 const adminProfileStorageKey = "tomujinAdminProfile";
 const themeStorageKey = "tomujinTheme";
-const fallbackImageUrl = "/images/stagknight.jpg";
+const legacyFallbackImageUrl = "/images/stagknight.jpg";
+const fallbackImageUrl = "/images/tomujin.jpg";
 const featuredLimit = 4;
 const writingDropdownLabel = "Сурагчдын Бичвэр";
 const directHeaderCategorySlugs = new Set(["nom", "zurvas", "podcast"]);
@@ -47,6 +48,8 @@ const homeCategoryAccentColors = ["#23c2bf", "#ffc800", "#5a2595", "#ff5b2e"];
 const maxImageUploadBytes = 3 * 1024 * 1024;
 const allowedImageExtensions = new Set(["avif", "gif", "jpeg", "jpg", "png", "webp"]);
 const articlesPerPage = 9;
+const runtimeConfig = window.__TOM_ART_CONFIG__ || {};
+const apiBaseUrl = String(runtimeConfig.apiUrl || "").trim().replace(/\/+$/, "");
 
 let articleGrid;
 let articlePagination;
@@ -165,8 +168,25 @@ function tagsText(article = {}) {
   return Array.isArray(article.tags) ? article.tags.join(", ") : String(article.tags || "");
 }
 
+function isLocalFilePath(value = "") {
+  const imageUrl = String(value || "").trim();
+  return /^[a-z]:[\\/]/i.test(imageUrl) || imageUrl.startsWith("\\\\") || imageUrl.toLowerCase().startsWith("file:");
+}
+
 function articleImageUrl(article = {}) {
-  return article.imageUrl || fallbackImageUrl;
+  const imageUrl = String(article.imageUrl || article.image_url || "").trim();
+  if (!imageUrl || isLocalFilePath(imageUrl)) return fallbackImageUrl;
+  if (imageUrl === legacyFallbackImageUrl) return fallbackImageUrl;
+  if (imageUrl.startsWith("/images/") || imageUrl.startsWith("/uploads/")) return imageUrl;
+
+  try {
+    const parsed = new URL(imageUrl);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") return parsed.toString();
+  } catch {
+    // Fall back below.
+  }
+
+  return fallbackImageUrl;
 }
 
 function normalizedText(value = "") {
@@ -329,7 +349,8 @@ function isProbablyValidImageUrl(value = "") {
 
   const extension = getImageExtension(imageUrl);
   if (!allowedImageExtensions.has(extension)) return false;
-  if (imageUrl.startsWith("/images/")) return true;
+  if (imageUrl.startsWith("/images/") || imageUrl.startsWith("/uploads/")) return true;
+  if (isLocalFilePath(imageUrl)) return false;
 
   try {
     const parsed = new URL(imageUrl);
@@ -442,9 +463,12 @@ function renderParagraphs(value = "") {
 
 async function fetchJson(url, options) {
   let response;
+  const requestUrl = apiBaseUrl && String(url).startsWith("/api/")
+    ? `${apiBaseUrl}${url}`
+    : url;
 
   try {
-    response = await fetch(url, options);
+    response = await fetch(requestUrl, options);
   } catch {
     throw new Error("Cannot connect to backend");
   }
@@ -453,15 +477,17 @@ async function fetchJson(url, options) {
   const data = contentType.includes("application/json") ? await response.json().catch(() => ({})) : {};
 
   if (!response.ok) {
+    const errorMessage = data.error || data.message;
+
     if (response.status === 401) {
-      throw new Error(data.message || "Wrong password");
+      throw new Error(errorMessage || "Invalid credentials");
     }
 
     if (response.status >= 500) {
-      throw new Error(data.message || "Server error");
+      throw new Error(errorMessage || "Server error");
     }
 
-    throw new Error(data.message || "Request failed");
+    throw new Error(errorMessage || "Request failed");
   }
 
   return data;
@@ -475,7 +501,9 @@ function adminLoginErrorMessage(error = {}) {
   const message = String(error.message || "");
   if (!message || message === "Failed to fetch") return "Cannot connect to backend";
   if (message === "Cannot connect to backend") return message;
-  if (message.toLowerCase().includes("wrong password") || message.toLowerCase().includes("invalid email")) return "Wrong password";
+  if (message.toLowerCase().includes("invalid credentials") || message.toLowerCase().includes("wrong password") || message.toLowerCase().includes("invalid email")) {
+    return "Invalid credentials";
+  }
   if (message.toLowerCase().includes("server") || message.toLowerCase().includes("configured")) return "Server error";
   return message;
 }
@@ -484,11 +512,15 @@ function bindPasswordToggles(root = document) {
   root.querySelectorAll("[data-password-toggle]").forEach((button) => {
     const field = button.closest(".password-field");
     const input = field?.querySelector("input");
+    const eyeIcon = button.querySelector(".password-eye");
+    const eyeOffIcon = button.querySelector(".password-eye-off");
     if (!field || !input || button.dataset.bound === "true") return;
 
     const syncToggle = () => {
       const isVisible = input.type === "text";
       field.classList.toggle("is-visible", isVisible);
+      if (eyeIcon) eyeIcon.hidden = isVisible;
+      if (eyeOffIcon) eyeOffIcon.hidden = !isVisible;
       button.setAttribute("aria-pressed", String(isVisible));
       button.setAttribute("aria-label", isVisible ? "Hide password" : "Show password");
       button.title = isVisible ? "Hide password" : "Show password";

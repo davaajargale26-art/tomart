@@ -33,7 +33,7 @@ logs/                             Local runtime logs and pid files
 ## Local Setup
 
 ```powershell
-cd "C:\Users\erhemee\OneDrive\Desktop\news-site"
+cd path\to\news-site
 npm run build
 npm start
 ```
@@ -63,15 +63,19 @@ Recommended session value:
 JWT_SECRET=<32+ character random secret>
 ```
 
-Optional database values:
+Required production database and admin values:
 
 ```text
-DB_HOST=localhost
+DB_HOST=<render-database-host>
 DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=
-DB_NAME=loginapp
+DB_USER=<database-user>
+DB_PASSWORD=<database-password>
+DB_NAME=<database-name>
+ADMIN_EMAIL=<admin-email>
+ADMIN_PASSWORD=<admin-password>
 ```
+
+When frontend and backend run on the same Render service, leave `VITE_API_URL`, `REACT_APP_API_URL`, and `API_URL` blank so the frontend uses relative `/api/...` requests. If they are separate Render services, set one of those values to the backend Render URL.
 
 For the AI assistant, set an OpenAI API key in your shell or add it to `.env` as `OPENAI_API_KEY`.
 
@@ -82,7 +86,7 @@ A helper script is available at `tools/ai-assistant.js`.
 Usage:
 
 ```powershell
-cd "C:\Users\erhemee\OneDrive\Desktop\news-site"
+cd path\to\news-site
 setx OPENAI_API_KEY "your_api_key"
 npm run assistant -- --file frontend/public/app.js
 ```

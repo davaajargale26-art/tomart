@@ -53,8 +53,10 @@ const PORT = Number(process.env.PORT) || 8890;
 const publicPath = path.join(__dirname, "..", "frontend", "public");
 const publicImagesPath = path.join(publicPath, "images");
 const uploadImagesPath = path.join(publicImagesPath, "uploads");
-const fallbackImageUrl = "/images/stagknight.jpg";
+const legacyFallbackImageUrl = "/images/stagknight.jpg";
+const fallbackImageUrl = "/images/tomujin.jpg";
 const jwtSecret = process.env.JWT_SECRET;
+const clientApiUrl = normalizeClientApiUrl(process.env.VITE_API_URL || process.env.REACT_APP_API_URL || process.env.API_URL);
 const adminSessionTtl = process.env.ADMIN_SESSION_TTL || "6h";
 const cloudinaryConfig = {
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -132,7 +134,7 @@ const adminLoginRateLimiter = rateLimit({
   limit: Number(process.env.ADMIN_LOGIN_RATE_LIMIT || 10),
   standardHeaders: "draft-7",
   legacyHeaders: false,
-  message: { message: "Too many login attempts. Try again later." },
+  message: { error: "Too many login attempts. Try again later." },
 });
 
 const sensitiveRateLimiter = rateLimit({
@@ -197,6 +199,20 @@ function logRouteError(route, error, metadata = {}) {
   });
 }
 
+function normalizeClientApiUrl(value = "") {
+  const apiUrl = String(value || "").trim().replace(/\/+$/, "");
+  if (!apiUrl || apiUrl.includes("your-backend-service.onrender.com")) return "";
+
+  try {
+    const parsed = new URL(apiUrl);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") return parsed.toString().replace(/\/+$/, "");
+  } catch {
+    return "";
+  }
+
+  return "";
+}
+
 function ensureMemoryFallbackReady() {
   if (!memoryCategories.length || !memoryArticles.length) {
     initializeMemoryStore();
@@ -217,6 +233,11 @@ function requireEnv(name) {
   return value;
 }
 
+function requireAnyEnv(names = []) {
+  if (names.some((name) => String(process.env[name] || "").trim())) return;
+  throw new Error(`${names.join(" or ")} is required.`);
+}
+
 function assertRequiredProductionEnv() {
   if (!isProduction()) return;
 
@@ -225,13 +246,24 @@ function assertRequiredProductionEnv() {
   requireEnv("DB_USER");
   requireEnv("DB_PASSWORD");
   requireEnv("DB_NAME");
-  requireEnv("CLOUDINARY_CLOUD_NAME");
-  requireEnv("CLOUDINARY_API_KEY");
-  requireEnv("CLOUDINARY_API_SECRET");
+  requireEnv("ADMIN_EMAIL");
+  requireAnyEnv(["ADMIN_PASSWORD", "ADMIN_PASSWORD_HASH"]);
 }
 
 function asPublicImageUrl(value) {
-  return value || fallbackImageUrl;
+  const imageUrl = String(value || "").trim();
+  if (!imageUrl || isLocalFilePath(imageUrl)) return fallbackImageUrl;
+  if (imageUrl === legacyFallbackImageUrl) return fallbackImageUrl;
+  if (imageUrl.startsWith("/images/") || imageUrl.startsWith("/uploads/")) return imageUrl;
+
+  try {
+    const parsed = new URL(imageUrl);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") return parsed.toString();
+  } catch {
+    // Fall back below.
+  }
+
+  return fallbackImageUrl;
 }
 
 const defaultCategoryDefinitions = [
@@ -323,20 +355,50 @@ function parseDbGraduationYears(value = "") {
     .filter((year) => graduationYearOptions.includes(year));
 }
 
+function isLocalFilePath(value = "") {
+  const imageUrl = String(value || "").trim();
+  return /^[a-z]:[\\/]/i.test(imageUrl) || imageUrl.startsWith("\\\\") || imageUrl.toLowerCase().startsWith("file:");
+}
+
+function resolvePublicImagePath(imageUrl = "") {
+  if (imageUrl.startsWith("/images/")) {
+    return {
+      imagePath: path.resolve(publicPath, `.${imageUrl}`),
+      rootPath: publicImagesPath,
+    };
+  }
+
+  if (imageUrl.startsWith("/uploads/")) {
+    return {
+      imagePath: path.resolve(uploadImagesPath, imageUrl.slice("/uploads/".length)),
+      rootPath: uploadImagesPath,
+    };
+  }
+
+  return null;
+}
+
 function normalizeImageUrl(value) {
   const imageUrl = String(value || "").trim();
   if (!imageUrl) return fallbackImageUrl;
 
-  if (imageUrl.startsWith("/images/")) {
-    const imagePath = path.resolve(publicPath, `.${imageUrl}`);
-    const extension = path.extname(imagePath).toLowerCase();
-    const isInsideImages = imagePath === publicImagesPath || imagePath.startsWith(`${publicImagesPath}${path.sep}`);
+  if (isLocalFilePath(imageUrl)) {
+    const error = new Error("Local computer file paths cannot be used for article images.");
+    error.statusCode = 400;
+    throw error;
+  }
 
-    if (isInsideImages && allowedImageExtensions.has(extension) && fs.existsSync(imagePath)) {
+  const publicImage = resolvePublicImagePath(imageUrl);
+  if (publicImage) {
+    const { imagePath, rootPath } = publicImage;
+    const extension = path.extname(imagePath).toLowerCase();
+    const isInsidePublicRoot = imagePath === rootPath || imagePath.startsWith(`${rootPath}${path.sep}`);
+
+    if (isInsidePublicRoot && allowedImageExtensions.has(extension) && fs.existsSync(imagePath)) {
       return imageUrl;
     }
 
-    const error = new Error("Local image must exist in /images and use jpg, png, webp, avif, or gif.");
+    const error = new Error("Local image must exist in /images or /uploads and use jpg, png, webp, avif, or gif.");
     error.statusCode = 400;
     throw error;
   }
@@ -352,7 +414,7 @@ function normalizeImageUrl(value) {
     // Fall through to the validation error below.
   }
 
-  const error = new Error("Image URL must be a valid http(s) image URL or an existing /images/ path.");
+  const error = new Error("Image URL must be a valid http(s) image URL or an existing /images or /uploads path.");
   error.statusCode = 400;
   throw error;
 }
@@ -858,9 +920,6 @@ async function configuredAdminPasswordHash() {
   if (passwordHash) return passwordHash;
 
   const password = String(process.env.ADMIN_PASSWORD || process.env.OWNER_PASSWORD || "");
-  if (password && isProduction()) {
-    assertStrongPassword(password);
-  }
   return password ? bcrypt.hash(password, 12) : "";
 }
 
@@ -920,7 +979,7 @@ const seedArticles = [
     body:
       "Tomujin Article бол сурагчдын бичсэн нийтлэл, тэмдэглэл, бодлыг цэгцтэй харуулах зориулалттай нийтлэлийн талбар юм.\n\nЭхний хувилбар нь хайлт, ангилал, дэлгэрэнгүй унших хуудас, нийтлэл нэмэх хэсэгтэй. Дараагийн шатанд онлайн өгөгдлийн сан холбогдсоноор нийтлэлүүд байнга хадгалагдана.",
     author: "Tomujin Editorial",
-    imageUrl: "/images/stagknight.jpg",
+    imageUrl: fallbackImageUrl,
     featured: true,
     featuredOrder: 1,
     viewCount: 128,
@@ -937,7 +996,7 @@ const seedArticles = [
     body:
       "Энэ сайт худалдан авалтгүй, бүртгэлгүй. Зөвхөн нийтлэл унших, нийтлэх урсгалд төвлөрнө.\n\nНүүр хэсэг, ангилал, хайлт, нийтлэлийн дэлгэрэнгүй хуудас бүгд нэг backend-ээр ажиллаж байгаа тул дараа нь өгөгдлийн санг солиход үндсэн хэрэглээ хэвээр үлдэнэ.",
     author: "Tomujin Editorial",
-    imageUrl: "/images/stagknight.jpg",
+    imageUrl: fallbackImageUrl,
     featured: true,
     featuredOrder: 2,
     viewCount: 94,
@@ -954,7 +1013,7 @@ const seedArticles = [
     body:
       "Дээд хэсгийн хайлт дээр түлхүүр үг бичээд Enter дарахад тохирох нийтлэлүүд гарна. Хэрэв ганцхан нийтлэл олдвол шууд унших хуудас руу орно.\n\nНийтлэлийн карт дээр дарахад дэлгэрэнгүй хуудас нээгдэнэ. Ингэснээр нүүр хуудас хурдан уншигдаж, нийтлэл бүр тусдаа төвлөрсөн хэлбэртэй харагдана.",
     author: "Guide Desk",
-    imageUrl: "/images/stagknight.jpg",
+    imageUrl: fallbackImageUrl,
     featured: false,
     featuredOrder: null,
     viewCount: 61,
@@ -971,7 +1030,7 @@ const seedArticles = [
     body:
       "Мэдээний сайт дээр соёл, зарлал, зөвлөгөө, хувийн тэмдэглэл зэрэг төрлийн нийтлэлүүдийг тусад нь ангилж хадгална.\n\nЭнэ бүтэц нь жижиг сургуулийн нийтлэлийн талбар, клубийн мэдээллийн булан, эсвэл хувийн editorial сайт болж өргөжихөд бэлэн.",
     author: "Article Desk",
-    imageUrl: "/images/stagknight.jpg",
+    imageUrl: fallbackImageUrl,
     featured: false,
     featuredOrder: null,
     viewCount: 47,
@@ -2467,7 +2526,7 @@ async function completeAdminLogin(req, res) {
 
     if (!normalizedEmail || !password) {
       return res.status(400).json({
-        message: "Email and password are required."
+        error: "Email and password are required."
       });
     }
 
@@ -2475,7 +2534,7 @@ async function completeAdminLogin(req, res) {
       const configuredAdmin = await authenticateConfiguredAdmin(normalizedEmail, password);
       if (!configuredAdmin) {
         return res.status(401).json({
-          message: "Wrong password"
+          error: "Invalid credentials"
         });
       }
 
@@ -2494,7 +2553,7 @@ async function completeAdminLogin(req, res) {
 
     if (!rows.length) {
       return res.status(401).json({
-        message: "Wrong password"
+        error: "Invalid credentials"
       });
     }
 
@@ -2507,7 +2566,7 @@ async function completeAdminLogin(req, res) {
 
     if (!correctPassword) {
       return res.status(401).json({
-        message: "Wrong password"
+        error: "Invalid credentials"
       });
     }
 
@@ -2523,7 +2582,7 @@ async function completeAdminLogin(req, res) {
   } catch (error) {
     logRouteError("POST /api/admin/login", error);
     res.status(error.statusCode || 500).json({
-      message: error.statusCode === 503 ? error.message : "Server error"
+      error: "Server error"
     });
   }
 }
@@ -3412,6 +3471,13 @@ app.use("/api", (req, res) => {
   res.status(404).json({ message: "API route not found." });
 });
 
+app.get("/config.js", (_req, res) => {
+  res.type("application/javascript").send(
+    `window.__TOM_ART_CONFIG__ = ${JSON.stringify({ apiUrl: clientApiUrl })};`
+  );
+});
+
+app.use("/uploads", express.static(uploadImagesPath));
 app.use(express.static(publicPath));
 
 app.use((req, res, next) => {

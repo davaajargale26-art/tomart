@@ -5389,17 +5389,18 @@ body[data-view="admin"] .password-toggle svg,
 body[data-view="admin-dashboard"] .password-toggle svg {
   width: 18px;
   height: 18px;
+  display: block;
 }
 
-body[data-view="admin"] .password-field .password-toggle-eye-off,
-body[data-view="admin-dashboard"] .password-field .password-toggle-eye-off,
-body[data-view="admin"] .password-field.is-visible .password-toggle-eye,
-body[data-view="admin-dashboard"] .password-field.is-visible .password-toggle-eye {
+body[data-view="admin"] .password-field .password-eye-off,
+body[data-view="admin-dashboard"] .password-field .password-eye-off,
+body[data-view="admin"] .password-field.is-visible .password-eye,
+body[data-view="admin-dashboard"] .password-field.is-visible .password-eye {
   display: none;
 }
 
-body[data-view="admin"] .password-field.is-visible .password-toggle-eye-off,
-body[data-view="admin-dashboard"] .password-field.is-visible .password-toggle-eye-off {
+body[data-view="admin"] .password-field.is-visible .password-eye-off,
+body[data-view="admin-dashboard"] .password-field.is-visible .password-eye-off {
   display: block;
 }
 
