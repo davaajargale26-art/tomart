@@ -1701,6 +1701,7 @@ async function openAdminDashboard({ pushUrl = false } = {}) {
     const requestedStatus = submitter?.dataset.saveStatus || "draft";
     ensureGeneratedPublishFields();
     const payload = Object.fromEntries(new FormData(adminForm).entries());
+    payload.contentType = payload.contentType || "Article";
     addTaxonomyPayload(payload, adminForm);
     payload.isFeatured = adminForm.featured.checked;
     payload.featured = adminForm.featured.checked;
