@@ -6333,3 +6333,173 @@ body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .main-nav > .na
     font-size: 24px;
   }
 }
+
+/* User-requested mobile-only compact pass. Desktop rules stay untouched. */
+@media (max-width: 820px) {
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .site-header {
+    min-height: 42px;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .header-inner {
+    min-height: 42px !important;
+    padding: 6px 84px 6px 8px !important;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .brand {
+    justify-self: start !important;
+    justify-content: flex-start !important;
+    min-height: 30px !important;
+    margin: 0 !important;
+    transform: none !important;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .brand-logo {
+    height: 22px !important;
+    max-width: 88px !important;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .mobile-header-actions {
+    top: 6px !important;
+    right: 8px !important;
+    gap: 4px !important;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .mobile-icon-button {
+    width: 30px !important;
+    height: 30px !important;
+    min-height: 30px !important;
+    flex-basis: 30px !important;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .mobile-icon-button svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .mobile-menu-button span {
+    width: 16px !important;
+  }
+
+  body.mobile-search-open:not([data-view="admin"]):not([data-view="admin-dashboard"]) .header-actions,
+  body.mobile-menu-open:not([data-view="admin"]):not([data-view="admin-dashboard"]) .category-area {
+    margin-top: 7px !important;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .header-search {
+    height: 34px !important;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .header-search input {
+    min-height: 34px !important;
+    font-size: 13px !important;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .header-search button {
+    width: 34px !important;
+    min-height: 34px !important;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .main-nav {
+    gap: 5px !important;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .main-nav button,
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .category-toggle,
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .nav-section,
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .nav-home {
+    min-height: 30px !important;
+    padding: 0 8px !important;
+    font-size: 12px !important;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .hero,
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .publication-main {
+    width: calc(100% - 64px) !important;
+    min-width: 0 !important;
+    max-width: 340px !important;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .hero {
+    margin-top: 10px !important;
+    padding-bottom: 8px !important;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .hero-media,
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .post-card .post-thumb,
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .home-small-card .post-thumb,
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .category-card-grid .post-card .post-thumb {
+    aspect-ratio: 16 / 5 !important;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .hero-overlay {
+    padding-top: 7px !important;
+    gap: 4px !important;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .hero-kicker,
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .hero-meta,
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .post-category {
+    font-size: 10px !important;
+    line-height: 1.2 !important;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .hero-overlay h1 {
+    font-size: 16px !important;
+    line-height: 1.08 !important;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .hero-overlay p {
+    font-size: 11px !important;
+    line-height: 1.35 !important;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .hero-arrow {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 16px !important;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .publication-intro {
+    padding: 12px 0 8px !important;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .publication-intro h1 {
+    font-size: 18px !important;
+    line-height: 1.1 !important;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .publication-intro p {
+    font-size: 11px !important;
+    line-height: 1.45 !important;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .post-grid,
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .home-category-mosaic,
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .home-category-posts,
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .category-card-grid {
+    gap: 10px !important;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .post-copy {
+    padding-top: 6px !important;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .post-copy h3 {
+    font-size: 13px !important;
+    line-height: 1.15 !important;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .post-meta,
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .post-copy p {
+    font-size: 10.5px !important;
+    line-height: 1.4 !important;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .home-category-section {
+    padding-block: 10px !important;
+  }
+
+  body:not([data-view="admin"]):not([data-view="admin-dashboard"]) .home-section-heading h3 {
+    font-size: 15px !important;
+  }
+}
