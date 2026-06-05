@@ -5393,24 +5393,24 @@ body[data-view="admin-dashboard"] .password-field {
 
 body[data-view="admin"] .password-field input,
 body[data-view="admin-dashboard"] .password-field input {
-  padding-right: 46px;
+  padding-right: 52px;
 }
 
 body[data-view="admin"] .password-field .password-toggle,
 body[data-view="admin-dashboard"] .password-field .password-toggle {
   position: absolute;
   top: 50%;
-  right: 5px;
-  width: 34px;
-  height: 34px;
-  min-height: 34px;
+  right: 7px;
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
   display: grid;
   place-items: center;
   padding: 0;
   border: 0;
-  border-radius: 6px;
+  border-radius: 8px;
   background: transparent;
-  color: var(--muted);
+  color: #4f4840;
   box-shadow: none;
   transform: translateY(-50%);
 }
@@ -5426,9 +5426,14 @@ body[data-view="admin-dashboard"] .password-field .password-toggle:focus-visible
 
 body[data-view="admin"] .password-toggle svg,
 body[data-view="admin-dashboard"] .password-toggle svg {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 body[data-view="admin"] .password-field .password-eye-off,
@@ -5867,11 +5872,11 @@ body[data-view="admin-dashboard"] .admin-admin-form button {
 
 body[data-view="admin"] .password-field .password-toggle,
 body[data-view="admin-dashboard"] .password-field .password-toggle {
-  min-height: 34px;
+  min-height: 36px;
   padding: 0;
   border: 0;
   background: transparent;
-  color: var(--muted);
+  color: #4f4840;
 }
 
 body[data-view="admin"] .back-link,
